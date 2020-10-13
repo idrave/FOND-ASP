@@ -1,10 +1,10 @@
-from fondpddl.condition import Condition
+from fondpddl.condition import Precondition, Effect
 from fondpddl import Argument, Constant
 from typing import List
 
 class Action:
     def __init__(self, name: str, parameters: List[Argument],
-                 precondition: Condition, effect: Condition):
+                 precondition: Precondition, effect: Effect):
         self.name = name
         self.parameters = parameters
         self.precondition = precondition
@@ -24,3 +24,4 @@ class GroundAction:
     def __init__(self, action: Action, constants: List[Constant]):
         self.action = action
         self.constants = constants
+        #TODO: should check arity and type here?

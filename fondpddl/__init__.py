@@ -5,3 +5,4 @@ from fondpddl.predicates import Predicate
 from fondpddl.action import Action, GroundAction
 from fondpddl.state import State
 from fondpddl.domain import Domain
+from fondpddl.problem import Problem

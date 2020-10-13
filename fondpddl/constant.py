@@ -18,3 +18,11 @@ class Constant(TypedObject):
 
     def get_constant(self) -> Constant:
         return self
+
+    def __hash__(self):
+        return hash(self.name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Constant):
+            return False
+        return self.name == other.name

@@ -1,15 +1,21 @@
 from fondpddl import Domain, Constant, ConstType, GroundAction
-from fondpddl.condition import Variable, Condition
+from fondpddl.condition import Variable, Precondition, Effect
+from fondpddl.utils import Index
 from typing import List, Generator
 
+#TODO: is Effect appropriate for init argument?
 class Problem:
     def __init__(self, name: str, domain: Domain, objects: List[Constant],
-                 init: List[Variable], goal: Condition):
+                 init: List[Effect], goal: Precondition):
         self.name = name
         self.domain = domain
         self.objects = objects
         self.init = init
         self.goal = goal
+
+        self.pred_index = Index(self.domain.predicates)
+        self.const_index = Index(self.domain.constants + self.objects)
+        self.var_index = Index()
 
         self.by_type = domain.by_type
         for const in self.objects:
@@ -21,6 +27,11 @@ class Problem:
         if ctype == None:
             return self.objects
         return self.by_type.get(ctype, [])
+
+    def get_variable_index(self, variable: Variable):
+        predicate = (self.pred_index[variable.predicate], )
+        constants = (self.const_index[const] for const in variable.constants)
+        return self.var_index[predicate + constants]
 
     def ground_actions(self) -> Generator[GroundAction, None, None]:
 

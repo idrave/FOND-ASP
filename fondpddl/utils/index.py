@@ -9,7 +9,12 @@ class Index:
         return len(self.elems)
 
     def __getitem__(self, index):
-        return self.elems[index]
+        if isinstance(index, int):
+            return self.elems[index]
+        ind = self.index.get(index, None)
+        if ind != None:
+            return ind
+        raise ValueError(f'Invalid index: {index}')
 
     def __iter__(self):
         self.__it = -1

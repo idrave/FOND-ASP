@@ -1,6 +1,6 @@
-from fondpddl.condition import Condition
+from fondpddl.condition import Effect
 from typing import List
 
-class OneOf(Condition):
-    def __init__(self, conditions: List[Condition]):
-        self.conditions = conditions
+class OneOf:
+    def __init__(self, effects: List[Effect]):
+        self.effects = effects

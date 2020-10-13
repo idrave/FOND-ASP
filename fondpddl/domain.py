@@ -12,3 +12,15 @@ class Domain:
         self.predicates = predicates
         self.actions = actions
         self.contraints = constraints
+
+        type_set = set(self.types)
+        self.by_type = {t:[] for t in type_set}
+        for const in self.constants:
+            if const.ctype not in type_set:
+                raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
+            self.by_type[const.ctype].append(const)
+        
+    def get_constants(self, ctype:ConstType=None) -> List[Constant]:
+        if ctype == None:
+            return self.constants
+        return self.by_type.get(ctype, [])

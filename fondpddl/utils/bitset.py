@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Union
 class BitMask:
     def __init__(self, bits=bytearray()):
@@ -35,6 +36,12 @@ class BitSet(BitMask):
             raise ValueError('BitSet: length must be positive')
         self.bits = bytearray(b"\x00" * ((length + 7) // 8))
         self.length = length
+
+    @classmethod
+    def from_bitmask(cls, bitmask: BitMask) -> BitSet:
+        bs = cls(length=len(bitmask))
+        bs.bits = bitmask.bits
+        return bs
 
     def resize(self, length):
         if length < 0:

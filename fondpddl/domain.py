@@ -1,5 +1,8 @@
-from fondpddl import ConstType, Constant, Predicate, Action
+from fondpddl import ConstType, Constant, Predicate
+from fondpddl.action import Action
 from typing import List, Optional
+import typing
+
 
 class Domain:
     def __init__(self, name: str, requirements, constants: List[Constant],

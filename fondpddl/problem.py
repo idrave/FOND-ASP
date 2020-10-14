@@ -1,7 +1,7 @@
-from fondpddl import Domain, Constant, ConstType, GroundAction
-from fondpddl.condition import Variable, Precondition, Effect
-from fondpddl.utils import Index
-from typing import List, Generator
+from fondpddl import Domain, Constant, ConstType, GroundAction, State
+from fondpddl.condition import Variable, Precondition, Effect, AndEffect
+from fondpddl.utils import Index, get_combinations, StaticBitSet
+from typing import List, Generator, Iterator
 
 #TODO: is Effect appropriate for init argument?
 class Problem:
@@ -23,34 +23,36 @@ class Problem:
                 raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
             self.by_type[const.ctype].append(const)
 
-    def get_constants(self, ctype:ConstType=None) -> List[Constant]:
+    def get_constants(self, ctype: ConstType=None) -> List[Constant]:
         if ctype == None:
             return self.objects
         return self.by_type.get(ctype, [])
 
     def get_variable_index(self, variable: Variable):
         predicate = (self.pred_index[variable.predicate], )
-        constants = (self.const_index[const] for const in variable.constants)
+        constants = (self.const_index[const.get_constant()] for const in variable.constants)
         return self.var_index[predicate + constants]
 
     def ground_actions(self) -> Generator[GroundAction, None, None]:
-
-        def get_combinations(options: List[List], current=[]):
-            if len(current) == len(options):
-                yield current
-            else:
-                i = len(current)
-                for op in options[i]:
-                    for comb in get_combinations(options, current + [op]):
-                        yield comb
-
         for action in self.domain.actions:
             valid_params = []
             for param in action.parameters:
                 valid_params.append(self.get_constants(param.ctype))
-            for params in get_combinations(valid_params):
+            for params in get_combinations(valid_params, [], lambda l,x: l.append(x)):
                 ground_act = action.ground(params)
                 assert isinstance(ground_act, GroundAction)
                 yield ground_act
-           
+    
+    def get_initial_states(self) -> Iterator[State]:
+        for effects in AndEffect(self.init).get_effects(State(StaticBitSet), self):
+            yield State.from_atomset(effects)
 
+    def get_successors(self, state: State)-> Iterator[State]:
+        for action in self.ground_actions():
+            if action.is_valid(state, self):
+                for effects in action.get_effects(state, self):
+                    yield state.change_values(effects)
+
+    def is_goal(self, state: State)->bool:
+        return self.goal.evaluate(state, self)
+    

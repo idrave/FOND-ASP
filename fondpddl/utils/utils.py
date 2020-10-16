@@ -1,10 +1,9 @@
 from typing import List, Iterator
 
-def get_combinations(options: List[Iterator], current: List, combine):
-    if len(current) == len(options):
+def get_combinations(options: List[Iterator], current, combine, count=0):
+    if count == len(options):
         yield current
     else:
-        i = len(current)
-        for op in options[i]:
-            for comb in get_combinations(options, combine(current, op), combine):
+        for op in options[count]:
+            for comb in get_combinations(options, combine(current, op), combine, count=count+1):
                 yield comb

@@ -21,4 +21,4 @@ class NotEffect(Effect):
         self.neg_effect = effect
 
     def get_effects(self, state: State, problem: Problem):
-        yield AtomSet(negative=[problem.get_variable_index(self)])
+        yield AtomSet(negative=[problem.get_variable_index(self.neg_effect)])

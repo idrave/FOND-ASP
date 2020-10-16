@@ -1,9 +1,9 @@
 from typing import List, Optional, Hashable
 
 class Index:
-    def __init__(self, elems: List[Hashable]=[]):
-        self.index = {elem: i for elem, i in enumerate(elems)}
-        self.elems = elems
+    def __init__(self, elems: Optional[List[Hashable]]=None):
+        self.elems = elems if elems != None else []
+        self.index = {elem: i for elem, i in enumerate(self.elems)}
     
     def __len__(self):
         return len(self.elems)
@@ -11,10 +11,7 @@ class Index:
     def __getitem__(self, index):
         if isinstance(index, int):
             return self.elems[index]
-        ind = self.index.get(index, None)
-        if ind != None:
-            return ind
-        raise ValueError(f'Invalid index: {index}')
+        return self.get_index(index)
 
     def __iter__(self):
         self.__it = -1

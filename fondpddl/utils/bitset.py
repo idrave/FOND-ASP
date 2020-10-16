@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import Union
 class BitMask:
-    def __init__(self, bits=bytearray()):
+    def __init__(self, bits=None):
+        bits = bits if bits != None else bytearray()
         self.bits = bits
         self.length = len(bits) * 8
 
@@ -40,7 +41,7 @@ class BitSet(BitMask):
     @classmethod
     def from_bitmask(cls, bitmask: BitMask) -> BitSet:
         bs = cls(length=len(bitmask))
-        bs.bits = bitmask.bits
+        bs.bits = bytearray(bitmask.bits)
         return bs
 
     def resize(self, length):

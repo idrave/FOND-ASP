@@ -16,6 +16,9 @@ class Variable(Precondition, Effect):
         self.constants = constants
         #TODO: should check arity and type here?
     
+    def __str__(self):
+        return self.predicate.name+'('+','.join([const.name for const in self.constants])+')'
+
     def evaluate(self, state: State, problem: Problem):
         return state.get_value(self, problem)
 

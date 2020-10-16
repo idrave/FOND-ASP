@@ -40,3 +40,24 @@ class GroundAction:
         for param, const in zip(self.action.parameters, self.constants):
             param.ground(const)
         return self.action.effect.get_effects(state, problem)
+
+    def string(self, problem: Problem):
+        return self.action.name + '('+','.join([const.name for const in self.constants]) + ')'
+
+    def print(self, problem: Problem):
+        print(self.string(problem))
+
+    def __hash__(self):
+        return hash(self.action.name) + sum([hash(const) for const in self.constants])
+
+    def __eq__(self, other):
+        if not isinstance(other, GroundAction):
+            return False
+        if self.action.name != other.action.name:
+            return False
+        if len(self.constants) != len(other.constants):
+            return False
+        for const1, const2 in zip(self.constants, other.constants):
+            if const1 != const2:
+                return False
+        return True

@@ -1,13 +1,15 @@
 from __future__ import annotations
 class AtomSet:
-    def __init__(self, positive=set(), negative=set()):
+    def __init__(self, positive=None, negative=None):
+        positive = positive if positive != None else set()
+        negative = negative if negative != None else set()
         if not isinstance(positive, set):
-            pos = set(positive)
+            positive = set(positive)
         if not isinstance(negative, set):
-            neg = set(negative)
-        self.intersect = pos & neg
-        self.positive = pos.difference(self.intersect)
-        self.negative = pos.difference(self.intersect)
+            negative = set(negative)
+        self.intersect = positive & negative
+        self.positive = positive.difference(self.intersect)
+        self.negative = negative.difference(self.intersect)
     
     @classmethod
     def from_atomset(cls, atoms: AtomSet)-> AtomSet:

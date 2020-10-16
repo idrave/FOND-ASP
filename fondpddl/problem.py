@@ -1,7 +1,7 @@
 from fondpddl import Domain, Constant, ConstType, GroundAction, State
 from fondpddl.condition import Variable, Precondition, Effect, AndEffect
 from fondpddl.utils import Index, get_combinations, StaticBitSet
-from typing import List, Generator, Iterator
+from typing import List, Generator, Iterator, Tuple
 
 #TODO: is Effect appropriate for init argument?
 class Problem:
@@ -30,7 +30,7 @@ class Problem:
 
     def get_variable_index(self, variable: Variable):
         predicate = (self.pred_index[variable.predicate], )
-        constants = (self.const_index[const.get_constant()] for const in variable.constants)
+        constants = tuple(self.const_index[const.get_constant()] for const in variable.constants)
         return self.var_index[predicate + constants]
 
     def ground_actions(self) -> Generator[GroundAction, None, None]:
@@ -38,7 +38,8 @@ class Problem:
             valid_params = []
             for param in action.parameters:
                 valid_params.append(self.get_constants(param.ctype))
-            for params in get_combinations(valid_params, [], lambda l,x: l.append(x)):
+            #print([[o.name for o in c] for c in valid_params])
+            for params in get_combinations(valid_params, [], lambda l,x: l + [x]):
                 ground_act = action.ground(params)
                 assert isinstance(ground_act, GroundAction)
                 yield ground_act
@@ -47,12 +48,27 @@ class Problem:
         for effects in AndEffect(self.init).get_effects(State(StaticBitSet), self):
             yield State.from_atomset(effects)
 
-    def get_successors(self, state: State)-> Iterator[State]:
+    def valid_actions(self, state: State) -> Iterator[GroundAction]:
         for action in self.ground_actions():
             if action.is_valid(state, self):
-                for effects in action.get_effects(state, self):
-                    yield state.change_values(effects)
+                yield action
+
+    def apply_action(self, state: State, action: GroundAction)-> Iterator[State]:
+        for effects in action.get_effects(state, self):
+            st = state.change_values(effects)
+            yield st
 
     def is_goal(self, state: State)->bool:
         return self.goal.evaluate(state, self)
-    
+
+    def get_variable(self, index):
+        var = self.var_index[index]
+        pred = self.pred_index[var[0]]
+        consts = [self.const_index[c] for c in var[1:]]
+        return Variable(pred, consts)
+
+    def print_variable(self, index):
+        var = self.var_index[index]
+        pred = self.pred_index[var[0]]
+        consts = [self.const_index[c] for c in var[1:]]
+        print(str(Variable(pred, consts)))

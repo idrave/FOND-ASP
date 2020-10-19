@@ -8,7 +8,9 @@
 % pathgoal(S): there exists a path from S to a goal state, following the policy
 % edge(S1, S2): (S1, S2) is a valid transition from S1, following the policy
 #const k=3.
-#show policy/2.
+%#show policy/2.
+#show.
+#show policy(State, Action) : policy(State, Action), reach(State).
 
 {policy(State, Action): action(Action)} = 1 :- state(State).
 
@@ -41,20 +43,20 @@ connected(St1, St3, I) :-
     connected(St1, St2, I), edge(St2, St3),
     not terminating(St2, St3, I), iterate(I), St1 != St2.
 
-%*
-terminating(St1, St2, I+1) :-
-    edge(St1, St2), policy(St1, Act), not terminating(St1, St2, I),
-    connected(St2, St1, I), con_A(Act, J),
-    not con_B(Act2, J) :
-        connected(St2, T1, I), connected(T2, St1, I),
-        edge(T1, T2), policy(T1, Act2), not terminating(T1, T2, I).*%
 
 terminating(St1, St2, I+1) :-
     edge(St1, St2), policy(St1, Act), not terminating(St1, St2, I),
     connected(St2, St1, I), con_A(Act, J),
     not con_B(Act2, J) :
-        connected(St1, T1, I), connected(T2, St2, I),
+        connected(St2, T1, I), connected(T2, St1, I),
         edge(T1, T2), policy(T1, Act2), not terminating(T1, T2, I).
+%*
+terminating(St1, St2, I+1) :-
+    edge(St1, St2), policy(St1, Act), not terminating(St1, St2, I),
+    connected(St2, St1, I), con_A(Act, J),
+    not con_B(Act2, J) :
+        connected(St1, T1, I), connected(T2, St2, I),
+        edge(T1, T2), policy(T1, Act2), not terminating(T1, T2, I).*%
 
 terminating(S1, S2, I+1) :- terminating(S1, S2, I), iterate(I).
 

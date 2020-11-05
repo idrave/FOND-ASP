@@ -67,7 +67,7 @@ class State:
         symbols = [clingo.Function('state', [name])]
         if self.is_init:
             symbols.append(clingo.Function('initialState', [name]))
-        if self.is_goal:
+        if self.is_goal: 
             symbols.append(clingo.Function('goal', [name]))
         if not self.expanded:
             return symbols
@@ -76,6 +76,10 @@ class State:
             for s in states:
                 symbols.append(clingo.Function('transition', [name, action_names[action], state_names[s]]))
         return symbols
+
+    def id_clingo(self, state_index, problem):
+        return clingo.Function('id',[clingo.Function('state',[self.string(problem)]), state_index.get_index(self)])
+
 
     def set_expanded(self):
         self.expanded = True

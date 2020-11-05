@@ -9,13 +9,15 @@
 % edge(S1, S2): (S1, S2) is a valid transition from S1, following the policy
 % con_A(A, I): action A belongs to set of constraints A_I
 % con_B(A, I): action A belongs to set of constraints B_I
+#show.
+#show policy(State, Action) : policy(State, Action), reach(State).
+#show id(state(State), ID) : id(state(State), ID), reach(State).
 
-#show policy/2.
 
 {policy(State, Action): action(Action)} = 1 :- state(State).
 reach(St2) :-
     reach(St1), transition(St1, Action, St2),
-    policy(St1, Action).
+    policy(St1, Action), not goal(St1).
 
 reach(St0) :- initialState(St0).
 
@@ -28,7 +30,7 @@ pathgoal(State) :-
     transition(State, Action, St2), pathgoal(St2).
 
 edge(St1, St2) :-
-    transition(St1, Action, St2), policy(St1, Action).
+    transition(St1, Action, St2), policy(St1, Action), reach(St1), not goal(St1).
 
 #program terminating(i).
 
@@ -55,7 +57,7 @@ terminating(St1, St2, i+1) :-
     edge(St1, St2), policy(St1, Act), not terminating(St1, St2, i),
     connected(St2, St1, i), con_A(Act, J),
     not con_B(Act2, J) :
-        connected(St1, T1, i), connected(T2, St2, i),
+        connected(St2, T1, i), connected(T2, St1, i),
         edge(T1, T2), policy(T1, Act2), not terminating(T1, T2, i).
 
 % terminating edges pass through iterations

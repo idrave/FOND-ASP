@@ -1,29 +1,222 @@
-from fondpddl import ConstType, Constant, Predicate
+from fondpddl import ConstType, Constant, Predicate, Argument
+from fondpddl.utils.tokens import PddlTree, PddlIter, parse_typed_list
+from fondpddl.constant import parse_objects
+from fondpddl.argument import parse_parameters
 from fondpddl.action import Action
 from typing import List, Optional
 import typing
+import re
 
+class Requirements:
+    def __init__(self, requirements):
+        self.__requirements = requirements
+        self.__typing = ':typing' in requirements
+
+    def has_typing(self):
+        return self.__typing
+
+    def __str__(self):
+        return 'REQUIREMENTS ' + ' '.join(self.__requirements)
+
+    @staticmethod
+    def parse_requirements(pddl_iter: PddlIter):
+        req = []
+        while pddl_iter.has_next():
+            req.append(pddl_iter.get_next()) #TODO check requirement format
+        return Requirements(req)
+
+
+DOMAIN_NAME = 'name'
+DOMAIN_REQ = 'requirements'
+DOMAIN_CONST = 'constants'
+DOMAIN_PRED = 'predicates'
+DOMAIN_ACT = 'actions'
+DOMAIN_TYP = 'types'
 
 class Domain:
-    def __init__(self, name: str, requirements, constants: List[Constant],
+    def __init__(self, name: str, requirements: Requirements, constants: List[Constant],
                  predicates: List[Predicate], actions: List[Action], constraints,
-                 types: Optional[List[ConstType]]):
-        self.name = name
-        self.requirements = requirements
-        self.types = types
-        self.constants = constants
-        self.predicates = predicates
-        self.actions = actions
-        self.contraints = constraints
+                 types: Optional[List[ConstType]]= None):
+        self.set_name(name)
+        self.set_requirements(requirements)
+        self.constants = []
+        self.types = None
+        if types != None:
+            self.set_types(types)
+        self.set_constants(constants)
+        self.set_predicates(predicates)
+        self.set_actions(actions)
+        self.constraints = constraints #TODO add constraints inside actions
 
+    def __str__(self):
+        return '(DOMAIN ' + self.name + '\n' + str(self.requirements) + '\n' + \
+            (('TYPES ' + ' '.join(map(str, self.types))+'\n') if self.is_typed() else '') + \
+            'CONSTANTS (' + ' '.join(map(str, self.constants)) + ')\n' + \
+            'PREDICATES (' + ' '.join(map(str, self.predicates)) + ')\n' + \
+            '\n'.join(map(str, self.actions)) + '\n'
+            
+
+    def set_name(self, name):
+        self.name = name
+
+    def set_requirements(self, requirements):
+        self.requirements = requirements
+
+    def is_typed(self):
+        return self.requirements.has_typing()
+
+    def set_constants(self, constants):
+        self.constants = constants
+        if self.is_typed():
+            self._create_by_type()
+
+    def set_types(self, types):
+        self.types = types #TODO check requirements
+        self._create_by_type()
+
+    def set_predicates(self, predicates):
+        self.predicates = predicates
+        #self._validate_predicates() TODO
+
+    def set_actions(self, actions):
+        self.actions = actions
+        #self._validate_actions() TODO
+
+    def _create_by_type(self):
         type_set = set(self.types)
         self.by_type = {t:[] for t in type_set}
         for const in self.constants:
             if const.ctype not in type_set:
                 raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
             self.by_type[const.ctype].append(const)
-        
-    def get_constants(self, ctype:ConstType=None) -> List[Constant]:
+
+    def get_constants(self, ctype:ConstType=None) -> List[Constant]: #TODO implement subtype usage
         if ctype == None:
             return self.constants
         return self.by_type.get(ctype, [])
+
+    @staticmethod
+    def parse(filename):
+        pddl_tokens = PddlTree.from_pddl(filename)
+        if pddl_tokens.count_elements() < 1:
+            raise ValueError('Domain not found')
+        token_iter = pddl_tokens.iter_elements()
+        domain = Domain.parse_tokens(token_iter.get_group())
+        token_iter.assert_end()
+        return domain
+    
+    @staticmethod
+    def parse_tokens(pddl_tree: PddlTree):
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token('define')
+        domain_params = {}
+        name = Domain.parse_name(pddl_iter.get_group())
+        domain_params[DOMAIN_NAME] = name
+        while pddl_iter.has_next():
+            next_elem = pddl_iter.get_group()
+            Domain.parse_elem(next_elem, domain_params)
+        typed = DOMAIN_REQ in domain_params and domain_params[DOMAIN_REQ].has_typing()
+        return Domain(
+            name, domain_params.get(DOMAIN_REQ, Requirements([])),
+            domain_params.get(DOMAIN_CONST, []),
+            domain_params.get(DOMAIN_PRED, []),
+            domain_params.get(DOMAIN_ACT, []), [],
+            domain_params[DOMAIN_TYP] if typed else None
+        )
+
+    @staticmethod
+    def parse_name(pddl_tokens: PddlTree):
+        pddl_iter = pddl_tokens.iter_elements()
+        pddl_iter.assert_token('domain')
+        name = pddl_iter.get_name()
+        pddl_iter.assert_end()
+        return name
+
+    @staticmethod
+    def parse_elem(pddl_tree: PddlTree, domain_params):
+        methods = {
+            ':requirements' : Domain.parse_requirements,
+            ':types' : Domain.parse_types,
+            ':constants' : Domain.parse_constants,
+            ':predicates' : Domain.parse_predicates,
+            ':action' : Domain.parse_action
+        }
+        first_token = pddl_tree.iter_elements().get_next()
+        if first_token not in methods:
+            raise ValueError(f'Invalid term {first_token}')
+        methods[first_token](pddl_tree, domain_params)
+
+    @staticmethod
+    def parse_requirements(pddl_tree: PddlTree, domain_params):
+        if DOMAIN_REQ in domain_params:
+            raise ValueError('Redefinition of requirements')
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token(':requirements')
+        domain_params[DOMAIN_REQ] = Requirements.parse_requirements(pddl_iter)
+
+    @staticmethod
+    def parse_types(pddl_tree: PddlTree, domain_params):
+        #TODO check requirement
+        if DOMAIN_TYP in domain_params:
+            raise ValueError('Redefinition of types')
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token(':types')
+        types = {'object': ConstType('object')}
+        typed_list = parse_typed_list(pddl_iter)
+        for type_l, super_type_name in typed_list:
+            super_type = types.get(super_type_name, None)
+            if super_type == None:
+                raise ValueError(f'Type {super_type_name} not declared')
+            for name in type_l:
+                if name in types:
+                    raise ValueError(f'Duplicate type {name}')
+                types[name] = ConstType(name, super_type)
+        domain_params[DOMAIN_TYP] = list(types.values())
+
+    @staticmethod
+    def parse_constants(pddl_tree: PddlTree, domain_params):
+        if DOMAIN_CONST in domain_params:
+            raise ValueError('Redefinition of constants')
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token(':constants')
+        if DOMAIN_REQ in domain_params and domain_params[DOMAIN_REQ].has_typing():
+            types = domain_params.get(DOMAIN_TYP, [])
+        else:
+            types = None
+        domain_params[DOMAIN_CONST] = parse_objects(pddl_iter, types=types)
+        
+    @staticmethod
+    def parse_predicates(pddl_tree: PddlTree, domain_params):
+        if DOMAIN_PRED in domain_params:
+            raise ValueError('Redefinition of predicates')
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token(':predicates')
+        predicates = []
+        pred_names = set()
+        while pddl_iter.has_next():
+            pred_tokens = pddl_iter.get_group()
+            pred_iter = pred_tokens.iter_elements()
+            pred_name = pred_iter.get_name()
+            if pred_name in pred_names:
+                raise ValueError(f'Duplicate predicate {pred_name}')
+            if DOMAIN_REQ in domain_params and domain_params[DOMAIN_REQ].has_typing():
+                types = domain_params.get(DOMAIN_TYP, [])
+            else:
+                types = None
+            params = parse_parameters(pred_iter, types=types)
+            pred_names.add(pred_name)
+            predicates.append(Predicate(pred_name, params))
+        domain_params[DOMAIN_PRED] = predicates
+
+    @staticmethod
+    def parse_action(pddl_tree: PddlTree, domain_params):
+        if DOMAIN_ACT not in domain_params:
+            domain_params[DOMAIN_ACT] = []
+        if DOMAIN_REQ in domain_params and domain_params[DOMAIN_REQ].has_typing():
+            types = domain_params.get(DOMAIN_TYP,[])
+        else:
+            types = None
+        domain_params[DOMAIN_ACT].append(
+            Action.parse_action(
+                pddl_tree, domain_params.get(DOMAIN_PRED, []),
+                domain_params.get(DOMAIN_CONST, []), types))

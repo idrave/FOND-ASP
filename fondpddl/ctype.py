@@ -6,6 +6,9 @@ class ConstType:
         self.name = name
         self.super_type = super_type
 
+    def __str__(self):
+        return self.name
+
     def __eq__(self, other):
         if not isinstance(other, ConstType):
             return False

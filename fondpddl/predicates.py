@@ -6,6 +6,9 @@ class Predicate:
         self.name = name
         self.arguments = arguments
 
+    def __str__(self):
+        return self.name + '(' + ','.join(map(str, self.arguments)) + ')'
+
     def __hash__(self):
         return hash(self.name)
 

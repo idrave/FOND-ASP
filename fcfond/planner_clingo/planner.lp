@@ -11,6 +11,7 @@
 %#show policy/2.
 #show.
 #show policy(State, Action) : policy(State, Action), reach(State).
+#show id(state(S), ID) : id(state(S), ID).
 
 {policy(State, Action): action(Action)} = 1 :- state(State).
 
@@ -50,13 +51,18 @@ terminating(St1, St2, I+1) :-
     not con_B(Act2, J) :
         connected(St2, T1, I), connected(T2, St1, I),
         edge(T1, T2), policy(T1, Act2), not terminating(T1, T2, I).
+
 %*
+possible alternative
 terminating(St1, St2, I+1) :-
     edge(St1, St2), policy(St1, Act), not terminating(St1, St2, I),
-    connected(St2, St1, I), con_A(Act, J),
-    not con_B(Act2, J) :
-        connected(St1, T1, I), connected(T2, St2, I),
-        edge(T1, T2), policy(T1, Act2), not terminating(T1, T2, I).*%
+    connected(St2, St1, I), con_A(Act, J), not connected_B(St2, St1, I, J).
+
+connected_B(S1, S2, i, J):-
+    edge(S2, S1), not terminating(S2, S1, I), policy(S2, Act), con_A(Act, J),
+    connected(S1, T1, I), edge(T1, T2), connected(T2, S2, I), policy(T1, A), con_B(A, J),
+    not terminating(T1, T2, I).
+*%
 
 terminating(S1, S2, I+1) :- terminating(S1, S2, I), iterate(I).
 

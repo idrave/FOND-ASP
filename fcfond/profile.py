@@ -34,7 +34,6 @@ def profile(pipe, pid):
     pipe.close()
 
 def run_profile(args, profile=profile):
-    print(args)
     parent_conn, child_conn = multiprocessing.Pipe(duplex=True)
     proc = subprocess.Popen(args, stdout=subprocess.PIPE)
     prof = multiprocessing.Process(target=profile, args=(child_conn, proc.pid))
@@ -55,7 +54,6 @@ def is_sat(string):
         return False
     return None
 
-
 def parse_clingo_out(output):
     empty = r'\s.*?'
     sat = '(SATISFIABLE|UNSATISFIABLE)\n\n'
@@ -72,8 +70,9 @@ def parse_clingo_out(output):
         results[key] = call(value) if call != None else value
     return results
 
-args = sys.argv
-out, prof = run_profile(args[1:])
-parsed_out = parse_clingo_out(out)
-parsed_out[MAXMEM] = max(prof[MEMORY]) / 1e6
-print(parsed_out)
+if __name__ == "__main__":
+    args = sys.argv
+    out, prof = run_profile(args[1:])
+    parsed_out = parse_clingo_out(out)
+    parsed_out[MAXMEM] = max(prof[MEMORY]) / 1e6
+    print(parsed_out)

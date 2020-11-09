@@ -14,7 +14,7 @@ def load_domain_and_problem(domain_file, problem_file):
     problem = Problem.parse(problem_file, {domain.name : domain})
     return problem
 
-def encode_clingo_problem(domain_file, problem_file, iterator=None, expand_goal=True, log=False):
+def encode_clingo_problem(domain_file, problem_file, iterator=None, expand_goal=False, log=False):
     iterator = iterator if iterator != None else fondpddl.algorithm.BreadthFirstSearch()
     problem = load_domain_and_problem(domain_file, problem_file)
     if log:

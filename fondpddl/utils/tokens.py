@@ -19,6 +19,7 @@ class PddlTree:
     def from_pddl(filename):#TODO add argument
         with open(filename, 'r') as fp:
             pddl = fp.read()
+        pddl = re.sub(r';.*', '', pddl)
         pddl = re.sub(r'(\(|\))', r' \1 ', pddl)
         pddl = re.sub(r'\s+', ' ', pddl)
         pddl = pddl.lower()
@@ -96,25 +97,6 @@ class PddlIter:
             raise ValueError(f'Unexpected {self.get_next()}')
         return
 
-
-'''
-    @staticmethod
-    def pddl_block_parser(func):
-        def inner(*args, **kwargs):
-            tokeniters = list(filter(lambda x: isinstance(x, PDDLTokenIter), args))
-            indexes = list(map(lambda x: x._i, tokeniters))
-            for tokeniter in tokeniters:
-                tokeniter.open_block()
-            ret = None
-            try:
-                ret = func(*args, **kwargs)
-            except BacktrackParse:
-                for tokeniter, i in zip(tokeniters, indexes):
-                    tokeniter._i = i
-            for tokeniter in tokeniters:
-                tokeniter.close_block()
-            return ret
-        return inner'''
 
 def parse_typed_list(pddl_iter: PddlIter, ground=True):
     current = []

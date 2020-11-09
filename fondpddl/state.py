@@ -85,7 +85,7 @@ class State:
         self.expanded = True
 
     def set_transitions(self, transitions):
-        self.transitions = transitions
+        self.transitions = transitions #TODO with nondeterministic effects we might have a repeated (state, action) pair
 
     def get_transitions(self) -> List[Tuple[GroundAction,List[State]]]:
         if self.transitions == None:

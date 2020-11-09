@@ -50,38 +50,24 @@ terminating(S) :-
 
 terminating(S1, S2) :- terminating(S2), edge(S1, S2).
 
-% extra:
-% if successor s3 of s1 is terminating and (s1,s3) is fair,
-% (s1,s2) is terminating for any successor s2 of s1
-terminating(S1, S2) :-
-    policy(S1, A), fair(A), edge(S1, S2),
-    edge(S1, S3), terminating(S3).
 
 % if a state is not in a cycle, it is terminating
-%*
--cycle(S1) :- state(S1), terminating(S2, S3) : connected(S1, S2), edge(S2, S3), connected(S3, S1).
+-cycle(S1):- state(S1), terminating(S2, S3) : connected(S1, S2), edge(S2, S3), connected(S3, S1).
 cycle(S) :- not -cycle(S), state(S).
-terminating(S) :- state(S), -cycle(S).*%
-cycle(S1) :- connected(S1, S2), edge(S2, S3), not terminating(S2, S3), connected(S3, S1).
-terminating(S) :- state(S), not cycle(S).
+terminating(S) :- state(S), -cycle(S).
 
 terminating(S, S) :-
     edge(S, S), policy(S, Act), con_A(Act, J).
 
 % qnp like termination
-%*
+
 terminating(S1, S2) :-
     edge(S1, S2), policy(S1, Act), con_A(Act, J),
     terminating(T1, T2):
         connected(S2, T1), connected(T2, S1),
-        edge(T1, T2), policy(T1, Act2), con_B(Act2, J).*%
-terminating(S1, S2) :-
-    edge(S1, S2), policy(S1, Act), con_A(Act, J),
-    not con_B(Act2, J) :
-        connected(S2, T1), connected(T2, S1),
-        edge(T1, T2), policy(T1, Act2), not terminating(T1, T2).
+        edge(T1, T2), policy(T1, Act2), con_B(Act2, J).
 
-%:-  cycle(S), reach(S).
+:-  cycle(S), reach(S).
 #show terminating/2.
 #show terminating/1.
 #show cycle/1.

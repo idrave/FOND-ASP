@@ -29,7 +29,8 @@ class Effect(ABC):
         effects = {
             'and' : AndEffect,
             'not' : NotEffect,
-            'oneof': OneOf
+            'oneof': OneOf,
+            'when': WhenEffect #TODO add conditional effect requirement
         }
         eff = pddl_tree.iter_elements().get_next()
         if eff == None:
@@ -90,7 +91,7 @@ class Precondition(ABC):
         raise NotImplementedError
 
     @abstractstaticmethod
-    def parse(pddl_tree: PddlTree, objects, predicates):
+    def parse(pddl_tree: PddlTree, objects, predicates): #TODO bug: called in subclasses without parse method
         prec = {
             'and' : And,
             'not' : Not
@@ -257,6 +258,31 @@ class OneOf(Effect):
             effects.append(effect)
         return OneOf(effects)
 
+
+class WhenEffect(Effect):
+    def __init__(self, condition: Precondition, effect: Effect):
+        self.condition = condition
+        self.effect = effect
+
+    def get_effects(self, state: State, problem: Problem):
+        if self.condition.evaluate(state, problem):
+            for effect in self.effect.get_effects(state, problem):
+                yield effect
+        else:
+            for effect in EmptyEffect().get_effects(state, problem):
+                yield effect
+
+    def __str__(self):
+        return '(WHEN ' + str(self.condition) + ' ' + str(self.effect) + ')'
+
+    @staticmethod
+    def parse(pddl_tree: PddlTree, objects, predicates):
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token('when')
+        condition = Precondition.parse(pddl_iter.get_group(), objects, predicates)
+        effect = Effect.parse(pddl_iter.get_group(), objects, predicates)
+        pddl_iter.assert_end()
+        return WhenEffect(condition, effect)
 
 class Variable(Precondition, Effect):
     def __init__(self, predicate: Predicate, constants: List[TypedObject]):

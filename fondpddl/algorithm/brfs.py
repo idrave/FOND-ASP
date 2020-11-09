@@ -22,7 +22,6 @@ class BreadthFirstSearch(GraphIterator):
                 state.set_transitions(successors)
                 yield state
                 continue
-
             for action in problem.valid_actions(state):
                 children = []
                 for new_state in problem.apply_action(state, action):

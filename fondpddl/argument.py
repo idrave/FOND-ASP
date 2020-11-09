@@ -7,6 +7,8 @@ class Argument(TypedObject):
         self.ground_value = None
     
     def get_constant(self) -> Constant:
+        if self.ground_value  == None:
+            raise ValueError(f'Argument {self.name} not grounded')
         return self.ground_value
 
     def ground(self, constant: Constant):
@@ -23,7 +25,7 @@ def parse_parameters(pddl_iter, types=None):
 
     if types == None:
         while pddl_iter.has_next():
-            param = pddl_iter.get_name()
+            param = pddl_iter.get_param()
             if param in param_names:
                 raise ValueError(f'Duplicate parameter {param}')
             param_names.add(param)

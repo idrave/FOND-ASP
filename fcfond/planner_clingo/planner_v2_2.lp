@@ -11,11 +11,11 @@
 % con_A(A, I): action A belongs to set of constraints A_I
 % con_B(A, I): action A belongs to set of constraints B_I
 #const k=3.
-%#show.
+#show.
 %#show policy(State, Action) : policy(State, Action), reach(State).
+#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).
 
-
-{policy(State, Action): action(Action)} = 1 :- state(State), reach(State).
+{policy(State, Action): action(Action)} = 1 :- state(State), reach(State), not goal(State).
 
 reach(S2) :-
     reach(S1), transition(S1, Action, S2),
@@ -64,10 +64,6 @@ terminating(S, I) :- terminating(S, I-1), iterate(I).
 % extra:
 terminating(S, I+1) :- state(S), not connected(S, S, I), iterate(I).
 %terminating(S, I) :- state(S), not connected(S, S, I), iterate(I).
-
-terminating(S1, S2, I) :-
-    policy(S1, A), fair(A), edge(S1, S2),
-    edge(S1, S3), terminating(S3, I), iterate(I).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

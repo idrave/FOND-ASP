@@ -31,7 +31,6 @@ def profile(pipe, pid):
             pipe.recv()
             break
     pipe.send({MEMORY: mem})
-    pipe.close()
 
 def run_profile(args, profile=profile):
     parent_conn, child_conn = multiprocessing.Pipe(duplex=True)
@@ -45,6 +44,7 @@ def run_profile(args, profile=profile):
     prof_out = parent_conn.recv()
     prof.join()
     parent_conn.close()
+    child_conn.close()
     return out, prof_out
 
 def is_sat(string):

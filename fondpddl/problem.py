@@ -25,7 +25,7 @@ class Problem:
         self.set_fairness(fair, constraints)
 
         self.pred_index = Index(self.domain.predicates)
-        self.const_index = Index(self.domain.constants + self.objects)
+        self.const_index = Index(self.get_constants())
         self.var_index = Index()
         if domain.is_typed():
             self.by_type = domain.by_type
@@ -57,7 +57,7 @@ class Problem:
 
     def get_constants(self, ctype: ConstType=None) -> List[Constant]:
         if ctype == None:
-            return self.objects
+            return self.objects + self.domain.constants
         return self.by_type.get(ctype, [])
 
     def get_variable_index(self, variable: Variable):

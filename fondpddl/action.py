@@ -70,12 +70,18 @@ class GroundAction:
     def is_valid(self, state: State, problem: Problem):
         for param, const in zip(self.action.parameters, self.constants):
             param.ground(const)
-        return self.action.precondition.evaluate(state, problem)
+        value = self.action.precondition.evaluate(state, problem)
+        for param in self.action.parameters:
+            param.reset()
+        return value
 
     def get_effects(self, state: State, problem: Problem):
         for param, const in zip(self.action.parameters, self.constants):
             param.ground(const)
-        return self.action.effect.get_effects(state, problem)
+        for effect in self.action.effect.get_effects(state, problem):
+            yield effect
+        for param in self.action.parameters:
+            param.reset()
 
     def __str__(self):
         return self.action.name + '('+','.join([const.name for const in self.constants]) + ')'

@@ -20,7 +20,7 @@ class Planner:
 
 class FairnessPlanner(Planner):
     #FILE = Path(__file__).parent/'planner_clingo'/'planner_v2_1.lp'
-    FILE = Path(__file__).parent/'planner_clingo'/'planner_v2_1_ids.lp'
+    FILE = Path(__file__).parent/'planner_clingo'/'planner_v2_2.lp'
 
     def __init__(self):
         pass
@@ -44,46 +44,55 @@ class FairnessPlanner(Planner):
             logdict[PREPROCESS] = time.time() - start
         return symbols
 
-    def solve(self, domain, k=3, logdict:dict = None, **kwargs):
-        args = ['clingo', FairnessPlanner.FILE, domain, '-c', f'k={k}']
-        print(args)
-        out, prof = run_profile(args)
-        parsed_out = parse_clingo_out(out)
-        parsed_out[MAXMEM] = max(prof[MEMORY]) / 1e6
-        if logdict != None:
-            logdict.update(parsed_out)
-        return out
+    def solve(self, domain, k=None, n=1, **kwargs):
+        k = k if k != None else 3
+        args = ['clingo', FairnessPlanner.FILE, domain, '-c', f'k={k}', '-n', str(n)]
+        return run_profile(args)
 
-def solve_pddl(domain_file, problem_file, planner: Planner, output_dir, expand_goal=True, log=False, **kwargs):
+class FairnessNoIndex(FairnessPlanner):
+    FILE = Path(__file__).parent/'planner_clingo'/'planner_noindex.lp'
+    def solve(self, domain, n=1, **kwargs):
+        args = ['clingo', FairnessPlanner.FILE, domain, '-n', str(n)]
+        return run_profile(args)
+
+def process_output(output, profile):
+    parsed_out = parse_clingo_out(output)
+    parsed_out[MAXMEM] = max(profile[MEMORY]) / 1e6
+    return parsed_out
+
+def solve_pddl(name, domain_file, problem_file, planner: Planner,
+                output_dir, iterator, expand_goal=False, log=False, **kwargs):
     start = time.time()
-    symbols, id_sym = encode_clingo_problem(domain_file, problem_file, expand_goal=expand_goal, log=log)
-    logs = {'Problem': Path(problem_file).stem}
-    processed = str(Path(output_dir)/('proc_' + Path(problem_file).stem + '.lp'))
+    symbols, id_sym = encode_clingo_problem(
+        domain_file, problem_file, iterator=iterator, expand_goal=expand_goal, log=log)
+    logs = {'Problem': name}
+    processed = str(Path(output_dir)/('proc_' + name + '.lp'))
     with open(processed, 'w') as fp:
         for symbol in symbols + id_sym:
             fp.write(str(symbol)+'.\n')
     domain_file = processed
     logs[PREPROCESS] = time.time() - start
     print('Pddl processed')
-    output = planner.solve(domain_file, logdict=logs, **kwargs)
+    output, profile = planner.solve(domain_file, **kwargs)
+    logs.update(process_output(output, profile))
     return output, logs
 
-def solve_problem(domain_file: str, planner: Planner, output_dir, pre_process=False, **kwargs):
+def solve_clingo(name, domain_file, planner: Planner, output_dir, pre_process=False, **kwargs):
     domain_path = Path(domain_file)
-    log = {'Problem': domain_path.stem}
-    #TODO should handle pddl here as well
+    logs = {'Problem': name}
     if pre_process:
-        symbols = planner.relevant_symbols(domain_file, logdict=log)
-        processed = str(Path(output_dir)/('proc_'+domain_path.stem+'.lp'))
+        symbols = planner.relevant_symbols(domain_file, logdict=logs) #TODO change this
+        processed = str(Path(output_dir)/('proc_'+ name +'.lp'))
         with open(processed, 'w') as fp:
             for symbol in symbols:
                 fp.write(str(symbol)+'.\n')
         domain_file = processed
         print('Preprocessing done')
     else:
-        log[PREPROCESS] = 0
-    output = planner.solve(domain_file, logdict=log, **kwargs)
-    return output, log
+        logs[PREPROCESS] = 0
+    output, profile = planner.solve(domain_file, **kwargs)
+    logs.update(process_output(output, profile))
+    return output, logs
 
 def format_results(results):
     for key, value in results.items():
@@ -91,42 +100,3 @@ def format_results(results):
             results[key] = round(value, 2)
         elif isinstance(value, bool):
             results[key] = str(value)
-
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('problems', nargs='+')
-    parser.add_argument('-out', default=None)
-    parser.add_argument('-k', type=int, default=3)
-    parser.add_argument('-preproc', action='store_true')
-    parser.add_argument('--pddl', action='store_true')
-    parser.add_argument('--log', action='store_true')
-    args = parser.parse_args()
-    if args.out == None:
-        args.out = str(Path(__file__).parent/'res'/'default')
-    return args
-
-def run():
-    args = parse_args()
-    out_path = Path(args.out)
-    if not out_path.is_dir():
-        out_path.mkdir(parents=True)
-    df = pd.DataFrame()
-    if args.pddl:
-        assert len(args.problems) == 2
-        output, log = solve_pddl(args.problems[0], args.problems[1], FairnessPlanner(), args.out, log=args.log, k=args.k)
-        print(output)
-        format_results(log)
-        df = df.append(log, ignore_index=True)
-    else:
-        for problem in args.problems:
-            output, log = solve_problem(problem, FairnessPlanner(), args.out, pre_process=args.preproc, k=args.k)
-            print(problem)
-            print(output)
-            format_results(log)
-            df = df.append(log, ignore_index=True)
-    df.to_csv(str(Path(args.out)/'metrics.csv'),index=False)
-    print(df.head())
-
-
-if __name__ == "__main__":
-    run()

@@ -1,23 +1,14 @@
 from fcfond.experiments.names import *
-from fcfond.run import FairnessNoIndex, FairnessPlanner
+from fcfond.planner import FairnessNoIndex
 from fondpddl.algorithm import BreadthFirstSearch
 
-basic_index = {
-        PLANNER : FairnessPlanner,
-        PARAM_K : 3,
-        GRAPH_ITER : BreadthFirstSearch,
-        EXP_GOAL : False}
-
-basic_noindex = {
-    PLANNER : FairnessNoIndex,
-    GRAPH_ITER : BreadthFirstSearch,
-    EXP_GOAL : False}
+basic_exp = {
+        GRAPH_ITER : BreadthFirstSearch}
 
 def add_pddl_experiment(experiments, name, key, domain,
-                        problem, output, index=True):
-    base = basic_index if index else basic_noindex
+                        problem, output):
     experiments[key] = {
-        **base,
+        **basic_exp,
         PROB_NAME : name,
         ENCODING : PDDL,
         PDDL_DOMAIN : domain,

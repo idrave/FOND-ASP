@@ -94,7 +94,8 @@ class Precondition(ABC):
     def parse(pddl_tree: PddlTree, objects, predicates): #TODO bug: called in subclasses without parse method
         prec = {
             'and' : And,
-            'not' : Not
+            'not' : Not,
+            'or': Or #TODO add disjunctive precondition requirement
         }
         cond = pddl_tree.iter_elements().get_next()
         if cond == None:
@@ -225,6 +226,28 @@ class NotEffect(Effect):
         pddl_iter.assert_end()
         return NotEffect(condition)
 
+class Or(Precondition):
+    def __init__(self, conditions: List[Precondition]):
+        self.conditions = conditions
+
+    def evaluate(self, state: State, problem: problem):
+        for condition in self.conditions:
+            if condition.evaluate(state, problem):
+                return True
+        return False
+
+    def __str__(self):
+        return '(OR ' + ' '.join(map(str, self.conditions)) + ')'
+
+    @staticmethod
+    def parse(pddl_tree: PddlTree, objects, predicates):
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token('or')
+        conditions = []
+        while pddl_iter.has_next():
+            condition = Precondition.parse(pddl_iter.get_group(), objects, predicates)
+            conditions.append(condition)
+        return Or(conditions)
 
 class OneOf(Effect):
     def __init__(self, effects: List[Effect]):

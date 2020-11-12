@@ -4,18 +4,8 @@ import subprocess
 import re
 import sys
 import time
-
+from fcfond.names import *
 SLEEP_TIME=.001
-MEMORY = 'Memory'
-MAXMEM = 'Max Memory'
-SAT = 'Sat'
-MODELS = 'Models'
-CALLS = 'Calls'
-TIME = 'Time'
-SOLVING = 'Solve Time'
-MODEL1st = '1st Model Time'
-TIMEUNSAT = 'Unsat Time'
-CPUTIME = 'CPU Time'
 a = []
 
 def profile(pipe, pid):
@@ -31,6 +21,7 @@ def profile(pipe, pid):
             pipe.recv()
             break
     pipe.send({MEMORY: mem})
+    pipe.recv()
 
 def run_profile(args, profile=profile):
     parent_conn, child_conn = multiprocessing.Pipe(duplex=True)
@@ -42,6 +33,7 @@ def run_profile(args, profile=profile):
     proc.wait()
     parent_conn.send(1)
     prof_out = parent_conn.recv()
+    parent_conn.send(1)
     prof.join()
     parent_conn.close()
     child_conn.close()

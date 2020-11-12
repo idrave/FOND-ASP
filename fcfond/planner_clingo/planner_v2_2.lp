@@ -13,7 +13,7 @@
 #const k=3.
 #show.
 %#show policy(State, Action) : policy(State, Action), reach(State).
-#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).
+#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).%only for display purposes
 
 {policy(State, Action): action(Action)} = 1 :- state(State), reach(State), not goal(State).
 

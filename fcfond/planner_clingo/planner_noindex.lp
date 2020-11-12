@@ -10,9 +10,11 @@
 % fair(A):     action A has strong cyclic fairness 
 % con_A(A, I): action A belongs to set of constraints A_I
 % con_B(A, I): action A belongs to set of constraints B_I
-#show policy/2.
+#show.
+%#show policy/2.
+#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS). %only for display purposes
 
-{policy(State, Action): action(Action)} = 1 :- state(State), reach(State).
+{policy(State, Action): action(Action)} = 1 :- state(State), reach(State), not goal(State).
 
 reach(S2) :-
     reach(S1), transition(S1, Action, S2),
@@ -68,6 +70,4 @@ terminating(S1, S2) :-
         edge(T1, T2), policy(T1, Act2), con_B(Act2, J).
 
 :-  cycle(S), reach(S).
-#show terminating/2.
-#show terminating/1.
-#show cycle/1.
+

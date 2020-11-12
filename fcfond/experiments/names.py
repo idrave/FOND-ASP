@@ -10,8 +10,6 @@ PDDL_PROBLEM = 'pddl-problem'
 OUTPUT = 'output'
 PLANNER = 'planner'
 GRAPH_ITER = 'iter'
-EXP_GOAL = 'exp_goal'
-PARAM_K = 'k'
 EXPERIMENTS = 'experiments'
 
 PDDL_DOM_PATHS = Path(__file__).parent.parent/'domains'/'pddl'

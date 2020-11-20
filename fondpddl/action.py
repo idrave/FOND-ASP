@@ -24,7 +24,7 @@ class Action:
             raise ValueError((f'Action {self.name} requires {len(self.parameters)}'
                               f' parameters, received {len(constants)}'))
         for arg, const in zip(self.parameters, constants):
-            if arg.ctype != const.ctype:
+            if arg.ctype != None and not const.has_type(arg.ctype):
                 return None
         return GroundAction(self, constants)
 

@@ -10,9 +10,11 @@
 % fair(A):     action A has strong cyclic fairness 
 % con_A(A, I): action A belongs to set of constraints A_I
 % con_B(A, I): action A belongs to set of constraints B_I
-#show policy/2.
+#show.
+%#show policy/2.
+#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS). %only for display purposes
 
-{policy(State, Action): action(Action)} = 1 :- state(State), reach(State).
+{policy(State, Action): action(Action)} = 1 :- state(State), reach(State), not goal(State).
 
 reach(S2) :-
     reach(S1), transition(S1, Action, S2),
@@ -32,9 +34,9 @@ pathgoal(State) :-
 
 edge(S1, S2) :- transition(S1, Action, S2), policy(S1, Action), reach(S1), not goal(S1).
 
-connected(S1, S2) :- edge(S1, S2), not terminating(S1, S2).
+%connected(S1, S2) :- edge(S1, S2).
 
-connected(S1, St3) :- connected(S1, S2), edge(S2, St3), not terminating(S2, St3), S1 != S2.
+%connected(S1, St3) :- connected(S1, S2), edge(S2, St3), S1 != S2.
 
 terminating(G) :- goal(G).
 
@@ -50,42 +52,22 @@ terminating(S) :-
 
 terminating(S1, S2) :- terminating(S2), edge(S1, S2).
 
-% extra:
-% if successor s3 of s1 is terminating and (s1,s3) is fair,
-% (s1,s2) is terminating for any successor s2 of s1
-terminating(S1, S2) :-
-    policy(S1, A), fair(A), edge(S1, S2),
-    edge(S1, S3), terminating(S3).
 
 % if a state is not in a cycle, it is terminating
-terminating(S) :- state(S), not connected(S).
-
 %*
-% Bad code: some non terminating policies returned
-cycle(S1) :- connected(S1, S2), edge(S2, S3), not terminating(S2, S3), connected(S3, S1).
-terminating(S) :- state(S), not cycle(S).
-*%
+nonterm(S1, S2) :- edge(S1, S2), not terminating(S1, S2).
+nonterm(S1, S2) :-
+    nonterm(S1, T), edge(T, S2), not terminating(T, S2).
+-cycle(S1):- state(S1), terminating(S1, S2) : edge(S1, S2), nonterm(S2, S1).
+cycle(S) :- not -cycle(S), state(S).*%
 
-terminating(S, S) :-
-    edge(S, S), policy(S, Act), con_A(Act, J).
+-cycle(S1):- state(S1), terminating(S2, S3) : connected(S1, S2), edge(S2, S3), connected(S3, S1).
+cycle(S) :- not -cycle(S), state(S).
+terminating(S) :- state(S), -cycle(S).
+connected(S1, S2) :- edge(S1, S2).
+connected(S1, St3) :- connected(S1, S2), edge(S2, St3), S1 != S2.
 
-% qnp like termination
-terminating(S1, S2) :-
-    edge(S1, S2), policy(S1, Act), con_A(Act, J),
-    terminating(T1, T2):
-        connected(S2, T1), connected(T2, S1),
-        edge(T1, T2), policy(T1, Act2), con_B(Act2, J).
+terminating(S) :- state(S), -cycle(S).
 
-%*
-% Bad code: some non terminating policies returned
-terminating(S1, S2) :-
-    edge(S1, S2), policy(S1, Act), con_A(Act, J),
-    not con_B(Act2, J) :
-        connected(S2, T1), connected(T2, S1),
-        edge(T1, T2), policy(T1, Act2), not terminating(T1, T2).
-*%
+:-  cycle(S), reach(S).
 
-:-  connected(S, S), reach(S).
-#show terminating/2.
-#show terminating/1.
-#show cycle/1.

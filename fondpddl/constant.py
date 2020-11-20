@@ -11,6 +11,9 @@ class TypedObject(ABC):
     def __str__(self):
         return self.name
 
+    def has_type(self, ctype: ConstType):
+        return self.ctype.is_subtype(ctype)
+
     @abstractmethod
     def get_constant(self) -> Constant:
         raise NotImplementedError

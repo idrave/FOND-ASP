@@ -12,7 +12,7 @@ class Argument(TypedObject):
         return self.ground_value
 
     def ground(self, constant: Constant):
-        if constant.ctype != self.ctype:
+        if self.ctype != None and not constant.has_type(self.ctype):
             raise ValueError(f'Type {self.ctype} expected, but got {constant.ctype}')
         self.ground_value = constant
 

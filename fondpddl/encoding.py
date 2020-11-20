@@ -1,8 +1,11 @@
 from fondpddl import Problem
 from fondpddl.algorithm import GraphIterator
 from fondpddl.utils import Index
+from fcfond.names import STATE_N, ACTION_N
 
-def clingo_problem_encoding(problem: Problem, iterator: GraphIterator, expand_goal=True, ids=True, log=False):
+def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
+                            expand_goal=True, ids=True, log=False,
+                            logdict=None):
     state_index = Index()
     action_index = Index()
     clingo_symbols = []
@@ -22,6 +25,10 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator, expand_go
         clingo_symbols += action.encode_clingo(problem, action_index)
         id_symbols.append(action.id_clingo(action_index))
     
+    if logdict != None:
+        logdict[STATE_N] = len(state_index)
+        logdict[ACTION_N] = len(action_index)
+
     if log:
         print('States:')
         for i, elem in enumerate(state_index):

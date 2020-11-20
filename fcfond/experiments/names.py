@@ -11,6 +11,7 @@ OUTPUT = 'output'
 PLANNER = 'planner'
 GRAPH_ITER = 'iter'
 EXPERIMENTS = 'experiments'
+CALLBACK = 'callback'
 
 PDDL_DOM_PATHS = Path(__file__).parent.parent/'domains'/'pddl'
 DEFAULT_OUT = Path(__file__).parent.parent/'res'

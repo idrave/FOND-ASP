@@ -6,6 +6,14 @@ class ConstType:
         self.name = name
         self.super_type = super_type
 
+    def is_subtype(self, ctype: ConstType):
+        t = self
+        while t != None:
+            if t == ctype:
+                return True
+            t = t.super_type
+        return False
+
     def __str__(self):
         return self.name
 

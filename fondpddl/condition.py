@@ -307,6 +307,7 @@ class WhenEffect(Effect):
         pddl_iter.assert_end()
         return WhenEffect(condition, effect)
 
+
 class Variable(Precondition, Effect):
     def __init__(self, predicate: Predicate, constants: List[TypedObject]):
         self.predicate = predicate
@@ -316,7 +317,7 @@ class Variable(Precondition, Effect):
         if len(constants) < len(predicate.arguments):
             raise ValueError(f'Too little arguments for predicate {predicate.name}')
         for param, const in zip(self.predicate.arguments, constants):
-            if param.ctype != None and param.ctype != const.ctype:
+            if param.ctype != None and not const.ctype.is_subtype(param.ctype):
                 raise ValueError(f'Wrong argument type {const.ctype} for {predicate.name}')
     
     def __str__(self):

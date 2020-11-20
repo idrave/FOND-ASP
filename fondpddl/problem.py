@@ -61,8 +61,8 @@ class Problem:
         return self.by_type.get(ctype, [])
 
     def get_variable_index(self, variable: Variable):
-        predicate = (self.pred_index[variable.predicate], )
-        constants = tuple(self.const_index[const.get_constant()] for const in variable.constants)
+        predicate = (variable.predicate, )
+        constants = tuple(const.get_constant() for const in variable.constants)
         return self.var_index[predicate + constants]
 
     def ground_actions(self) -> Generator[GroundAction, None, None]:
@@ -70,7 +70,6 @@ class Problem:
             valid_params = []
             for param in action.parameters:
                 valid_params.append(self.get_constants(param.ctype))
-            #print([[o.name for o in c] for c in valid_params])
             for params in get_combinations(valid_params, [], lambda l,x: l + [x]):
                 ground_act = action.ground(params)
                 assert isinstance(ground_act, GroundAction)
@@ -95,15 +94,12 @@ class Problem:
 
     def get_variable(self, index):
         var = self.var_index[index]
-        pred = self.pred_index[var[0]]
-        consts = [self.const_index[c] for c in var[1:]]
+        pred = var[0]
+        consts = var[1:]
         return Variable(pred, consts)
 
     def print_variable(self, index):
-        var = self.var_index[index]
-        pred = self.pred_index[var[0]]
-        consts = [self.const_index[c] for c in var[1:]]
-        print(str(Variable(pred, consts)))
+        print(str(self.get_variable(index)))
 
     def str_constraints(self):
         constraints = []

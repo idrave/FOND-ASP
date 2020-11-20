@@ -87,8 +87,11 @@ class Domain:
         self.by_type = {t:[] for t in type_set}
         for const in self.constants:
             if const.ctype not in type_set:
-                raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
-            self.by_type[const.ctype].append(const)
+                raise ValueError(f'Type {const.ctype} of constant {const.name} not declared')
+            t = const.ctype
+            while t != None:
+                self.by_type[t].append(const)
+                t = t.super_type
 
     def get_constants(self, ctype:ConstType=None) -> List[Constant]: #TODO implement subtype usage
         if ctype == None:

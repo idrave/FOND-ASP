@@ -12,7 +12,6 @@ class Planner:
     def solve(self, domain, log):
         pass
 
-
 class DualFondQnpPlanner(Planner):
     #FILE = Path(__file__).parent/'planner_clingo'/'planner_v2_1.lp'
     FILE = Path(__file__).parent/'planner_clingo'/'planner_v2_2.lp'
@@ -46,8 +45,36 @@ class DualFondQnpPlanner(Planner):
         return run_profile(args)
 
 class FairnessNoIndex(DualFondQnpPlanner):
-    FILE = Path(__file__).parent/'planner_clingo'/'planner_noindex.lp'
+    FILE = Path(__file__).parent/'planner_clingo'/'planner_noindex_2.lp'
     def solve(self, domain, n=1, **kwargs):
         args = ['clingo', FairnessNoIndex.FILE, domain, '-n', str(n)]
+        print(args)
+        return run_profile(args)
+
+class QNPPlanner(FairnessNoIndex):
+    FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_qnp.lp'
+    def solve(self, domain, n=1, **kwargs):
+        args = ['clingo', QNPPlanner.FILE, domain, '-n', str(n)]
+        print(args)
+        return run_profile(args)
+
+class DualFONDPlanner:
+    FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_noindex_dual.lp'
+    def solve(self, domain, n=1, **kwargs):
+        args = ['clingo', DualFONDPlanner.FILE, domain, '-n', str(n)]
+        print(args)
+        return run_profile(args)
+
+class StrongPlanner:
+    FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_strong.lp'
+    def solve(self, domain, n=1, **kwargs):
+        args = ['clingo', StrongPlanner.FILE, domain, '-n', str(n)]
+        print(args)
+        return run_profile(args)
+
+class StrongCyclicPlanner:
+    FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_strongcyclic.lp'
+    def solve(self, domain, n=1, **kwargs):
+        args = ['clingo', StrongCyclicPlanner.FILE, domain, '-n', str(n)]
         print(args)
         return run_profile(args)

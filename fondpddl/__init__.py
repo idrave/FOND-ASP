@@ -14,12 +14,13 @@ def load_domain_and_problem(domain_file, problem_file):
     problem = Problem.parse(problem_file, {domain.name : domain})
     return problem
 
-def encode_clingo_problem(domain_file, problem_file, iterator=None, expand_goal=False, log=False):
+def encode_clingo_problem(domain_file, problem_file, iterator=None,
+                          expand_goal=False, log=False, logdict=None):
     iterator = iterator if iterator != None else fondpddl.algorithm.BreadthFirstSearch()
     problem = load_domain_and_problem(domain_file, problem_file)
     if log:
         print(str(problem.domain))
         print(str(problem))
     symbols = fondpddl.encoding.clingo_problem_encoding(
-                problem, iterator, expand_goal=expand_goal, log=log)
+                problem, iterator, expand_goal=expand_goal, log=log, logdict=logdict)
     return symbols

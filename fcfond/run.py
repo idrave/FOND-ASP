@@ -10,7 +10,12 @@ import pandas as pd
 from fcfond.names import *
 
 def process_output(output, profile):
-    parsed_out = parse_clingo_out(output)
+    print('Status: ', profile[STATUS])
+    if profile[STATUS] == FINISH:
+        parsed_out = parse_clingo_out(output)
+        parsed_out[RESULT] = parsed_out[SAT]
+    else:
+        parsed_out = {RESULT: profile[STATUS]}
     parsed_out[MAXMEM] = max(profile[MEMORY]) / 1e6
     return parsed_out
 

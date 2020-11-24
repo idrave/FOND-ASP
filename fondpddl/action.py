@@ -75,6 +75,14 @@ class GroundAction:
             param.reset()
         return value
 
+    def is_valid_static(self, state: State, problem: problem, positive, negative):
+        for param, const in zip(self.action.parameters, self.constants):
+            param.ground(const)
+        values = self.action.precondition.evaluate_static(state, problem, positive, negative)
+        for param in self.action.parameters:
+            param.reset()
+        return True in values
+
     def get_effects(self, state: State, problem: Problem):
         for param, const in zip(self.action.parameters, self.constants):
             param.ground(const)

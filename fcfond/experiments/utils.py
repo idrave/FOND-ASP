@@ -3,6 +3,7 @@ from fcfond.planner import FairnessNoIndex
 from fondpddl.algorithm import BreadthFirstSearch
 from fcfond.names import *
 from fcfond.experiments.names import *
+import numpy as np
 
 def add_pddl_experiment(experiments, name, key, domain,
                         problem, output, planner, callback=None):
@@ -17,32 +18,56 @@ def add_pddl_experiment(experiments, name, key, domain,
         CALLBACK: callback
     }
 
-def avg_results(experiment, results):
-    results = concat_results(experiment, results)
-    final = {PROBLEM: experiment[PROB_NAME]}
-    final[PREPROCESS] = round(sum(exp[PREPROCESS] for exp in results)/len(results), 3)
-    final[MAXMEM] = round(sum(exp[PREPROCESS] for exp in results)/len(results), 2)
-    final[SAT] = round(100*sum(exp[SAT] for exp in results)/len(results), 2)
-    final[MODELS] = int(sum(exp[MODELS] for exp in results)/len(results))
-    final[CALLS] = int(sum(exp[CALLS] for exp in results)/len(results))
-    final[TIME] = round(sum(exp[PREPROCESS] for exp in results)/len(results), 2)
-    final[SOLVING] = round(sum(exp[SOLVING] for exp in results)/len(results), 2)
-    final[MODEL1st] = round(sum(exp[MODEL1st] for exp in results)/len(results), 2)
-    final[TIMEUNSAT] = round(sum(exp[TIMEUNSAT] for exp in results)/len(results), 2)
-    final[CPUTIME] = round(sum(exp[CPUTIME] for exp in results)/len(results), 2)
-    final[STATE_N] = int(sum(exp[STATE_N] for exp in results)/len(results))
-    final[ACTION_N] = int(sum(exp[ACTION_N] for exp in results)/len(results))
-    final[STDOUT] = '\n'.join(exp[PROB_NAME]+'\n'+exp[STDOUT] for exp in results)
-    return final
-
 def concat_results(experiment, results):
     final = []
     for result in results:
         if isinstance(result, list):
-            final += concat_results(experiment, results)
+            final += concat_results(experiment, result)
         else:
             final.append(result)
     return final
+
+def avg_results(experiment, results):
+    results = concat_results(experiment, results)
+    final = {PROBLEM: experiment[PROB_NAME]}
+    finished = []
+    final[SAT_N] = 0
+    final[UNSAT_N] = 0
+    final[TIMEOUT_N] = 0
+    final[MEMOUT_N] = 0
+    for exp in results:
+        if exp[RESULT] == True:
+            final[SAT_N] += 1
+            finished.append(exp)
+        elif exp[RESULT] == False:
+            final[UNSAT_N] += 1
+            finished.append(exp)
+        elif exp[RESULT] == TIMEOUT:
+            final[TIMEOUT_N] += 1
+        elif exp[RESULT] == MEMOUT:
+            final[MEMOUT_N] += 1
+        else:
+            raise ValueError(f'Unexpected result {exp[RESULT]}')
+
+    def avg_key(key, l, round_=0):
+        r = round(np.mean([exp[key] for exp in l]), round_)
+        if round_ == 0:
+            return int(r)
+        return r
+
+    final[PREPROCESS] = avg_key(PREPROCESS, results, 2)
+    final[MAXMEM] = avg_key(MAXMEM, finished, 2)
+    #final[MODELS] = avg_key(MODELS) #TODO
+    final[CALLS] = avg_key(CALLS, finished)
+    final[TIME] = avg_key(TIME, finished, 2)
+    final[SOLVING] = avg_key(SOLVING, finished, 2)
+    final[MODEL1st] = avg_key(MODEL1st, finished, 2)
+    final[TIMEUNSAT] = avg_key(TIMEUNSAT, finished, 2)
+    final[CPUTIME] = avg_key(CPUTIME, finished, 2)
+    final[STATE_N] = avg_key(STATE_N, results)
+    final[ACTION_N] = avg_key(ACTION_N, results)
+    final[STDOUT] = '\n'.join(exp[PROBLEM]+'\n'+exp[STDOUT] for exp in results)
+    return [final]
 
 def add_experiment_list(experiments, name, key, exp_list,
                         output, callback=concat_results):

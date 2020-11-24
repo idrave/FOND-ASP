@@ -13,10 +13,9 @@ PROBLEM_GOAL = 'goal'
 PROBLEM_FAIR = 'fair'
 PROBLEM_QNP = 'constraint'
 
-#TODO: is Effect appropriate for init argument?
 class Problem:
     def __init__(self, name: str, domain: Domain, objects: List[Constant],
-                 init: List[Effect], goal: Precondition, fair, constraints):
+                 init: List[Init], goal: Precondition, fair, constraints):
         self.name = name
         self.domain = domain
         self.objects = objects
@@ -33,6 +32,7 @@ class Problem:
                 if const.ctype not in self.by_type:
                     raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
                 self.by_type[const.ctype].append(const)
+        self.__ground_actions = self.possible_ground_actions()
 
     def set_fairness(self, fair: List[GroundAction],
                      constraints: List[Tuple[List[GroundAction], List[GroundAction]]]):
@@ -75,12 +75,30 @@ class Problem:
                 assert isinstance(ground_act, GroundAction)
                 yield ground_act
     
+    def get_ground_actions(self):
+        return self.__ground_actions
+
+    def possible_ground_actions(self):
+        ground_actions = []
+        positive = set()
+        negative = set()
+        for action in self.domain.actions:
+            pos, neg = action.effect.get_predicates()
+            positive.update(pos)
+            negative.update(neg)
+        for gact in self.ground_actions():
+            for s0 in self.get_initial_states():
+                if gact.is_valid_static(s0, self, positive, negative):
+                    ground_actions.append(gact)
+        return ground_actions
+
     def get_initial_states(self) -> Iterator[State]:
         for effects in AndEffect(self.init).get_effects(State(StaticBitSet), self):
             yield State.from_atomset(effects)
 
     def valid_actions(self, state: State) -> Iterator[GroundAction]:
-        for action in self.ground_actions():
+        #for action in self.ground_actions():
+        for action in self.get_ground_actions():
             if action.is_valid(state, self):
                 yield action
 

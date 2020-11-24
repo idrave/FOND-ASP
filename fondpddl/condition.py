@@ -21,6 +21,10 @@ class Effect(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_predicates(self):
+        raise NotImplementedError
+
+    @abstractmethod
     def __str__(self):
         raise NotImplementedError
 
@@ -72,6 +76,10 @@ class EmptyEffect(Effect):
         return '()'
     def get_effects(self, state: State, problem: Problem):
         yield AtomSet()
+
+    def get_predicates(self):
+        return set(), set()
+
     @staticmethod
     def parse(pddl_tree: PddlTree, objects, predicates):
         pddl_tree.iter_elements().assert_end()
@@ -84,6 +92,10 @@ class Precondition(ABC):
 
     @abstractmethod
     def evaluate(self, state: State, problem: Problem):
+        raise NotImplementedError
+
+    @abstractmethod
+    def evaluate_static(self, state: State, problem: Problem, positive, negative):
         raise NotImplementedError
 
     @abstractmethod
@@ -119,6 +131,8 @@ class EmptyCondition(Precondition):
         return '()'
     def evaluate(self, state: State, problem: Problem):
         return True
+    def evaluate_static(self, state: State, problem: Problem, positive, negative):
+        return (True,)
     @staticmethod
     def parse(pddl_tree: PddlTree, objects, predicates):
         pddl_tree.iter_elements().assert_end()
@@ -134,6 +148,16 @@ class And(Precondition):
             if not condition.evaluate(state, problem):
                 return False
         return True
+
+    def evaluate_static(self, state: State, problem: Problem, positive, negative):
+        f = False
+        for condition in self.conditions:
+            cond_vals = condition.evaluate_static(state, problem, positive, negative)
+            if (False in cond_vals):
+                f = True
+                if not (True in cond_vals):
+                    return (False, )
+        return (True, False) if f else (True,)
 
     def __str__(self):
         return '(AND ' + ' '.join(map(str, self.conditions)) + ')'
@@ -157,6 +181,15 @@ class AndEffect(Effect):
         effects = [list(effect.get_effects(state, problem)) for effect in self.effects]
         for det_effects in get_combinations(effects, AtomSet(), lambda s1,s2: s1.join(s2)):
             yield det_effects
+
+    def get_predicates(self):
+        pos = set()
+        neg = set()
+        for eff in self.effects:
+            p1, p2 = eff.get_predicates()
+            pos.update(p1)
+            neg.update(p2)
+        return pos, neg
 
     def __str__(self):
         return '(AND ' + ' '.join(map(str, self.effects)) + ')'
@@ -189,6 +222,15 @@ class Not(Precondition):
     def evaluate(self, state: State, problem: Problem):
         return not self.condition.evaluate(state, problem)
 
+    def evaluate_static(self, state: State, problem: Problem, positive, negative):
+        vals = self.condition.evaluate_static(state, problem, positive, negative)
+        res = []
+        if True in vals:
+            res.append(False)
+        if False in vals:
+            res.append(True)
+        return tuple(res)
+
     def __str__(self):
         return f'(NOT {str(self.condition)})'
 
@@ -206,6 +248,10 @@ class NotEffect(Effect):
 
     def get_effects(self, state: State, problem: Problem):
         yield AtomSet(negative=[problem.get_variable_index(self.neg_effect)])
+
+    def get_predicates(self):
+        neg, pos = self.neg_effect.get_predicates()
+        return pos, neg
 
     def __str__(self):
         return f'(NOT {str(self.neg_effect)})'
@@ -236,6 +282,16 @@ class Or(Precondition):
                 return True
         return False
 
+    def evaluate_static(self, state: State, problem: Problem, positive, negative):
+        t = False
+        for condition in self.conditions:
+            cond_vals = condition.evaluate_static(state, problem, positive, negative)
+            if (True in cond_vals):
+                t = True
+                if not (False in cond_vals):
+                    return (True,)
+        return (True, False) if t else (False,)
+
     def __str__(self):
         return '(OR ' + ' '.join(map(str, self.conditions)) + ')'
 
@@ -257,6 +313,15 @@ class OneOf(Effect):
         for effect in self.effects:
             for det_effect in effect.get_effects(state, problem):
                 yield det_effect
+
+    def get_predicates(self):
+        pos = set()
+        neg = set()
+        for eff in self.effects:
+            p1, p2 = eff.get_predicates()
+            pos.update(p1)
+            neg.update(p2)
+        return pos, neg
 
     def __str__(self):
         return '(ONEOF ' + ' '.join(map(str, self.effects)) + ')'
@@ -295,6 +360,9 @@ class WhenEffect(Effect):
             for effect in EmptyEffect().get_effects(state, problem):
                 yield effect
 
+    def get_predicates(self):
+        return self.effect.get_predicates()
+
     def __str__(self):
         return '(WHEN ' + str(self.condition) + ' ' + str(self.effect) + ')'
 
@@ -326,8 +394,23 @@ class Variable(Precondition, Effect):
     def evaluate(self, state: State, problem: Problem):
         return state.get_value(self, problem)
 
+    def evaluate_static(self, state, problem, positive, negative):
+        if self.evaluate(state, problem):
+            if self.predicate in negative:
+                return (True, False)
+            else:
+                return (True,)
+        else:
+            if self.predicate in positive:
+                return (True, False)
+            else:
+                return (False,)
+
     def get_effects(self, state: State, problem: Problem):
         yield AtomSet(positive=[problem.get_variable_index(self)])
+
+    def get_predicates(self):
+        return {self.predicate}, set()
 
     @staticmethod
     def parse(pddl_tree: PddlTree, objects, predicates):

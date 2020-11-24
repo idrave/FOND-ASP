@@ -36,6 +36,6 @@ def get_experiments():
                         LTL_DOM_PATHS/'swamp_p.pddl', DEFAULT_OUT_LTL/'swamp',
                         DualFONDPlanner)
 
-    add_experiment_list(experiments, 'ltl', 'ltl', list(experiments.values()), DEFAULT_OUT_LTL/'all')
+    add_experiment_list(experiments, 'ltl', 'ltl', list(experiments.keys()), DEFAULT_OUT_LTL/'all')
 
     return experiments

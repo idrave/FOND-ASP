@@ -26,6 +26,6 @@ def get_experiments():
                         QNP_DOM_PATHS/'delivery_d.pddl', QNP_DOM_PATHS/'delivery_p.pddl',
                         DEFAULT_OUT_QNP/'delivery_qnp', QNPPlanner)
 
-    add_experiment_list(experiments, 'qnp', 'qnp', list(experiments.values()), DEFAULT_OUT_QNP/'all')
+    add_experiment_list(experiments, 'qnp', 'qnp', list(experiments.keys()), DEFAULT_OUT_QNP/'all')
 
     return experiments

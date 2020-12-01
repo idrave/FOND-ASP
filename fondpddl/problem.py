@@ -1,6 +1,7 @@
 from fondpddl import Domain, Constant, ConstType, GroundAction, State
 import fondpddl.condition
-from fondpddl.condition import Variable, Precondition, Effect, AndEffect, Init, EmptyEffect, EmptyCondition
+from fondpddl.condition import Variable, GroundVar, Precondition, EmptyCondition
+from fondpddl.effect import AndEffect, Init, EmptyEffect, Effect
 from fondpddl.constant import parse_objects
 from fondpddl.utils import Index, get_combinations, StaticBitSet
 from fondpddl.utils.tokens import PddlIter, PddlTree
@@ -23,8 +24,6 @@ class Problem:
         self.goal = goal
         self.set_fairness(fair, constraints)
 
-        self.pred_index = Index(self.domain.predicates)
-        self.const_index = Index(self.get_constants())
         self.var_index = Index()
         if domain.is_typed():
             self.by_type = domain.by_type
@@ -60,10 +59,13 @@ class Problem:
             return self.objects + self.domain.constants
         return self.by_type.get(ctype, [])
 
+    def get_constant(self, c_id):
+        return self.objects[c_id]
+
     def get_variable_index(self, variable: Variable):
         predicate = (variable.predicate, )
         constants = tuple(const.get_constant() for const in variable.constants)
-        return self.var_index[predicate + constants]
+        return self.var_index.get_index(predicate + constants)
 
     def ground_actions(self) -> Generator[GroundAction, None, None]:
         for action in self.domain.actions:
@@ -93,14 +95,20 @@ class Problem:
         return ground_actions
 
     def get_initial_states(self) -> Iterator[State]:
-        for effects in AndEffect(self.init).get_effects(State(StaticBitSet), self):
+        for effects in AndEffect(self.init).get_effects(State(StaticBitSet(bytearray())), self):
             yield State.from_atomset(effects)
-
+    
     def valid_actions(self, state: State) -> Iterator[GroundAction]:
-        #for action in self.ground_actions():
         for action in self.get_ground_actions():
             if action.is_valid(state, self):
                 yield action
+    '''
+    def valid_actions(self, state: State) -> Iterator[GroundAction]:
+        atom_dict = state.get_atom_dict(self)
+        for action in self.domain.actions:
+            for g_action in action.valid_ground_actions(atom_dict, self):
+                #if g_action.is_valid(state, self):
+                    yield g_action'''
 
     def apply_action(self, state: State, action: GroundAction)-> Iterator[State]:
         for effects in action.get_effects(state, self):
@@ -114,7 +122,7 @@ class Problem:
         var = self.var_index[index]
         pred = var[0]
         consts = var[1:]
-        return Variable(pred, consts)
+        return GroundVar(Variable(pred, consts))
 
     def print_variable(self, index):
         print(str(self.get_variable(index)))
@@ -202,13 +210,15 @@ class Problem:
     def parse_objects(pddl_tree: PddlTree, domain: Domain, problem_params):
         if PROBLEM_OBJ in problem_params:
             raise ValueError('Redefinition of objects')
+        obj_index = Index(domain.constants.elems)
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':objects')
         if domain.is_typed():
             types = domain.types
         else:
             types = None
-        problem_params[PROBLEM_OBJ] = parse_objects(pddl_iter, types=types) #TODO check duplicate objects
+        parse_objects(pddl_iter, obj_index, types=types)
+        problem_params[PROBLEM_OBJ] = obj_index.elems
 
     @staticmethod
     def parse_init(pddl_tree: PddlTree, domain: Domain, problem_params):
@@ -217,11 +227,15 @@ class Problem:
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':init')
         inits = []
-        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
+        objects = problem_params.get(PROBLEM_OBJ, [])
         objects = {obj.name : obj for obj in objects}
         predicates = {pred.name: pred for pred in domain.predicates}
+        if domain.is_typed():
+            type_dict = {ty.name: ty for ty in domain.types}
+        else:
+            type_dict = None
         while pddl_iter.has_next():
-            init = Init.parse(pddl_iter.get_group(), objects, predicates, toplevel=True)
+            init = Init.parse(pddl_iter.get_group(), objects, predicates, type_dict, toplevel=True)
             inits.append(init)
         problem_params[PROBLEM_INIT] = inits
 
@@ -231,10 +245,14 @@ class Problem:
             raise ValueError('Redefinition of goal')
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':goal')
-        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
+        objects = problem_params.get(PROBLEM_OBJ,[])
         objects = {obj.name: obj for obj in objects}
         predicates = {pred.name: pred for pred in domain.predicates}
-        goal = Precondition.parse(pddl_iter.get_group(), objects, predicates)
+        if domain.is_typed():
+            types = {ty.name: ty for ty in domain.types}
+        else:
+            types = None
+        goal = Precondition.parse(pddl_iter.get_group(), objects, predicates, types)
         pddl_iter.assert_end()
         problem_params[PROBLEM_GOAL] = goal
 
@@ -246,7 +264,7 @@ class Problem:
         pddl_iter.assert_token(':fair')
         g_actions = []
         actions = domain.actions
-        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
+        objects = problem_params.get(PROBLEM_OBJ,[])
         while pddl_iter.has_next():
             action = GroundAction.parse(pddl_iter.get_group(), actions, objects)
             if PROBLEM_QNP in problem_params:
@@ -261,7 +279,7 @@ class Problem:
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':constraint')
         actions = domain.actions
-        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
+        objects = problem_params.get(PROBLEM_OBJ,[])
         a = None
         b = None
         while pddl_iter.has_next():

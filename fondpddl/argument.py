@@ -6,6 +6,9 @@ class Argument(TypedObject):
         super().__init__(name, ctype)
         self.ground_value = None
     
+    def is_ground(self):
+        return self.ground_value != None
+
     def get_constant(self) -> Constant:
         if self.ground_value  == None:
             raise ValueError(f'Argument {self.name} not grounded')
@@ -16,8 +19,24 @@ class Argument(TypedObject):
             raise ValueError(f'Type {self.ctype} expected, but got {constant.ctype}')
         self.ground_value = constant
 
+    def is_act_param(self):
+        return False
+
     def reset(self):
         self.ground_value = None
+
+
+class ActionParam(Argument):
+    def __init__(self, arg: Argument, position):
+        super().__init__(arg.name, arg.ctype)
+        self.pos = position
+
+    def get_pos(self):
+        return self.pos
+
+    def is_act_param(self):
+        return True
+
 
 def parse_parameters(pddl_iter, types=None):
     param_names = set()

@@ -1,4 +1,5 @@
 from fondpddl import ConstType, Constant, Predicate, Argument
+from fondpddl.utils import Index
 from fondpddl.utils.tokens import PddlTree, PddlIter, parse_typed_list
 from fondpddl.constant import parse_objects
 from fondpddl.argument import parse_parameters
@@ -178,6 +179,7 @@ class Domain:
 
     @staticmethod
     def parse_constants(pddl_tree: PddlTree, domain_params):
+        const_index = Index()
         if DOMAIN_CONST in domain_params:
             raise ValueError('Redefinition of constants')
         pddl_iter = pddl_tree.iter_elements()
@@ -186,30 +188,31 @@ class Domain:
             types = domain_params.get(DOMAIN_TYP, [])
         else:
             types = None
-        domain_params[DOMAIN_CONST] = parse_objects(pddl_iter, types=types)
+        parse_objects(pddl_iter, const_index, types=types)
+        domain_params[DOMAIN_CONST] = const_index.elems
         
     @staticmethod
     def parse_predicates(pddl_tree: PddlTree, domain_params):
         if DOMAIN_PRED in domain_params:
             raise ValueError('Redefinition of predicates')
+        pred_index = Index()
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':predicates')
-        predicates = []
-        pred_names = set()
         while pddl_iter.has_next():
             pred_tokens = pddl_iter.get_group()
             pred_iter = pred_tokens.iter_elements()
             pred_name = pred_iter.get_name()
-            if pred_name in pred_names:
-                raise ValueError(f'Duplicate predicate {pred_name}')
             if DOMAIN_REQ in domain_params and domain_params[DOMAIN_REQ].has_typing():
                 types = domain_params.get(DOMAIN_TYP, [])
             else:
                 types = None
             params = parse_parameters(pred_iter, types=types)
-            pred_names.add(pred_name)
-            predicates.append(Predicate(pred_name, params))
-        domain_params[DOMAIN_PRED] = predicates
+            pred = Predicate(pred_name, params)
+            if pred_index.find_index(pred) != None:
+                raise ValueError(f'Duplicate predicate {pred_name}')
+            
+            pred.set_id(pred_index.get_index(pred))
+        domain_params[DOMAIN_PRED] = pred_index.elems
 
     @staticmethod
     def parse_action(pddl_tree: PddlTree, domain_params):

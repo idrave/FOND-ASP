@@ -1,5 +1,5 @@
 import argparse
-from fcfond.experiments import run_experiments
+from fcfond.experiments import run_experiments, print_experiments
 from fcfond.planner import FairnessNoIndex
 
 def parse_args():
@@ -13,10 +13,14 @@ def parse_args():
     parser.add_argument('-k', nargs='?', const='3', default=None)
     parser.add_argument('-n', type=int, default=1, help='Number of policies (if 0 return all)')
     parser.add_argument('-t', type=int, default=1, help='Number of threads')
+    parser.add_argument('--print', action='store_true')
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    if args.print:
+        print_experiments(args.experiments)
+        return
     if args.fondf:
         planner = FairnessNoIndex
     else:

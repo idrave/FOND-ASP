@@ -11,6 +11,7 @@ if __name__ == "__main__":
     parser.add_argument('problem')
     parser.add_argument('-log', action='store_true')
     parser.add_argument('-profile', action='store_true')
+    parser.add_argument('-expgoal', action='store_true')
     args = parser.parse_args()
     if args.profile:
         pr = cProfile.Profile()
@@ -25,6 +26,6 @@ if __name__ == "__main__":
         ps.print_stats()
         print(s.getvalue())
     else:
-        symbols, ids = encode_clingo_problem(args.domain, args.problem, iterator=BreadthFirstSearch(), log=args.log)
+        symbols, ids = encode_clingo_problem(args.domain, args.problem, iterator=BreadthFirstSearch(), log=args.log, expand_goal=args.expgoal)
         for sym in symbols + ids:
             print(str(sym)+'.')

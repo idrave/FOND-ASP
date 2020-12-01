@@ -9,9 +9,7 @@ class Index:
         return len(self.elems)
 
     def __getitem__(self, index):
-        if isinstance(index, int):
-            return self.elems[index]
-        return self.get_index(index)
+        return self.elems[index]
 
     def __iter__(self):
         self.__it = -1

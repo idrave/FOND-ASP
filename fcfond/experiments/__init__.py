@@ -98,3 +98,14 @@ def run_experiment(name, experiments, output, log=False, n=1, planner=None, expg
                     log=log, k=k, n=n, threads=threads)
     
     return [results]
+
+def print_experiments(names):
+    experiments = get_experiments()
+    for name in names:
+        if name in experiments:
+            experiment = experiments[name]
+        else:
+            print(f'Wrong experiment name {name}')
+        print(name)
+        for key, value in experiment.items():
+            print('\t'+str(key), value)

@@ -2,11 +2,12 @@ from __future__ import annotations
 import typing
 if typing.TYPE_CHECKING:
     from fondpddl import State, Problem
-from fondpddl.condition import Precondition, Effect, EmptyCondition, EmptyEffect
+from fondpddl.condition import Precondition, EmptyCondition, GroundVar
+from fondpddl.effect import Effect, EmptyEffect
 from fondpddl.utils.tokens import PddlIter, PddlTree
-from fondpddl.utils import Index
+from fondpddl.utils import Index, get_combinations
 from fondpddl.argument import parse_parameters
-from fondpddl import Argument, Constant, Predicate, ConstType
+from fondpddl import Argument, Constant, Predicate, ConstType, ActionParam
 from typing import List
 import clingo
 
@@ -18,6 +19,33 @@ class Action:
         self.parameters = parameters
         self.precondition = precondition
         self.effect = effect
+
+    def valid_ground_actions(self, atoms, problem: Problem):
+        for objects, natoms in self.precondition.possible_grounding(
+                                        self.parameters, [None] * len(self.parameters),
+                                        atoms, [], problem):
+            for i, obj in enumerate(objects):
+                if obj == None:
+                    objects[i] = problem.get_constants(ctype=self.parameters[i].ctype)
+                else:
+                    objects[i] = [obj]
+
+            for objs in get_combinations(objects, [], lambda l, x: l + [x]):
+                valid = True
+                for natom in natoms:
+                    for param in natom.constants:
+                        if not param.is_ground():
+                            param.ground(objs[param.get_pos()]) #TODO check forall
+                    if atoms.is_atom(GroundVar(natom)):
+                        valid = False
+                    for param in natom.constants:
+                        if isinstance(param, Argument):
+                            param.reset()
+                    if not valid:
+                        break
+                if not valid:
+                    continue
+                yield GroundAction(self, objs)
 
     def ground(self, constants: List[Constant]):
         if len(constants) != len(self.parameters):
@@ -42,19 +70,21 @@ class Action:
         pddl_iter.assert_token(':parameters')
         param_tokens = pddl_iter.get_group()
         params = parse_parameters(param_tokens.iter_elements(), types=types)
+        params = [ActionParam(arg, i) for i, arg in enumerate(params)]
         preconditions = None
         effects = None
         objects = {obj.name : obj for obj in constants + params}
         preds = {pred.name: pred for pred in predicates}
+        type_dict = {ty.name: ty for ty in types} if types != None else None
         while pddl_iter.has_next():
             if pddl_iter.is_next(':precondition'):
                 if preconditions != None:
                     raise ValueError('Redefinition of preconditions')
-                preconditions = Precondition.parse_precondition(pddl_iter, objects, preds)
+                preconditions = Precondition.parse_precondition(pddl_iter, objects, preds, type_dict)
             elif pddl_iter.is_next(':effect'):
                 if effects != None:
                     raise ValueError('Redefinition of effects')
-                effects = Effect.parse_effect(pddl_iter, objects, preds)
+                effects = Effect.parse_effect(pddl_iter, objects, preds, type_dict)
             else:
                 raise ValueError(f'Unexpected {pddl_iter.get_next()} in action definition')
         preconditions = preconditions if preconditions != None else EmptyCondition()

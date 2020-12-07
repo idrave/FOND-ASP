@@ -17,6 +17,7 @@ class BreadthFirstSearch(GraphIterator):
             state = q.pop(0)
             state.set_goal(problem.is_goal(state))
             successors = []
+            #print('ITER:', state.string(problem))
             if not expand_goal and state.is_goal:
                 state.set_expanded()
                 state.set_transitions(successors)
@@ -25,6 +26,8 @@ class BreadthFirstSearch(GraphIterator):
             for action in problem.valid_actions(state):
                 children = []
                 for new_state in problem.apply_action(state, action):
+                    #print('STATE', new_state.string(problem))
+                    new_state.string(problem)
                     child = visited.get(new_state, None)
                     if child == None:   # new state
                         child = new_state

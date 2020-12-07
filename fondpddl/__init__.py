@@ -6,6 +6,8 @@ from fondpddl.action import Action, GroundAction
 from fondpddl.state import State
 from fondpddl.domain import Domain
 from fondpddl.problem import Problem
+import fondpddl.condition
+import fondpddl.effect
 import fondpddl.algorithm
 import fondpddl.encoding
 

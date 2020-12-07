@@ -16,6 +16,8 @@ class IntSet():
         self.__set.add(v)
 
     def remove(self, v):
+        if v not in self.__set:
+            return
         self.__array[v] = 0
         self.__set.remove(v)
 
@@ -28,9 +30,13 @@ class IntSet():
     def get_all(self):
         return self.__set
 
-    def add_set(self, other: IntSet, inplace=False):
+    def add_set(self, other: IntSet):
         for v in other:
             self.add(v)
+
+    def remove_set(self, other: IntSet):
+        for v in other:
+            self.remove(v)
 
     def is_equal(self, other: IntSet):
         if not isinstance(other, IntSet):
@@ -39,9 +45,6 @@ class IntSet():
 
     def __iter__(self):
         return iter(self.__set)
-
-    def symmetric_difference(self, other: IntSet):
-        self.__set = self.__set ^ other.get_all()
 
 
 class AtomDict:
@@ -62,7 +65,7 @@ class AtomDict:
         '''
         Add ground variable to AtomDict, using predicate id and variable id
         '''
-        if p_id not in self.__sets[p_id]:
+        if p_id not in self.__sets:
             self.__sets[p_id] = IntSet([])
         self.__sets[p_id].add(v_id)
 
@@ -71,9 +74,18 @@ class AtomDict:
         Add set of ground variables to AtomDict, using predicate id and IntSet with
         ground variable ids
         '''
-        if p_id not in self.__sets[p_id]:
+        if p_id not in self.__sets:
             self.__sets[p_id] = IntSet([])
         self.__sets[p_id].add_set(intset)
+
+    def remove_atoms_ids(self, p_id, intset):
+        '''
+        Remove set of ground variables in AtomDict, using predicate id and IntSet with
+        ground variable ids
+        '''
+        if p_id not in self.__sets:
+            return
+        self.__sets[p_id].remove_set(intset)
 
     def get_atoms(self, predicate):
         '''
@@ -86,9 +98,7 @@ class AtomDict:
         '''
         Get ground variables for some predicate in AtomDict, given the predicate id
         '''
-        if p_id not in self.__sets:
-            raise ValueError(f'AtomDict: no predicate id {p_id} in dictionary')
-        return self.__sets[p_id]
+        return self.__sets.get(p_id, IntSet([]))
 
     def get_pred_ids(self):
         '''
@@ -108,6 +118,8 @@ class AtomDict:
         Check if ground variable is contained in AtomDict,
         using predicate id and ground variable's id
         '''
+        if not self.has_pred_id(p_id):
+            return False
         return self.__sets[p_id].has(v_id)
 
     def has_pred_id(self, p_id):
@@ -121,7 +133,7 @@ class AtomDict:
         Iterate through predicates' ids in the AtomDict and their corresponding
         IntSets with the ground variables stored
         '''
-        for p_id, intset in self.__sets.keys():
+        for p_id, intset in self.__sets.items():
             yield p_id, intset
 
     def iter_ids(self):
@@ -129,20 +141,19 @@ class AtomDict:
         Iterate through ground variables in the AtomDict, returns predicate and ground variable
         ids for each variable
         '''
-        for p_id, intset in self.__sets.keys():
+        for p_id, intset in self.__sets.items():
             for v_id in intset:
                 yield p_id, v_id
 
     def get_hash(self):
-        return sum([s.get_hash() for s in self.__sets])
+        return sum([s.get_hash() for s in self.__sets.values()])
 
     def is_equal(self, atoms):
         if not isinstance(atoms, AtomDict) and not isinstance(atoms, StaticAtomDict):
             return False
-        if not self.get_pred_ids() == atoms.get_pred_ids():
-            return False
-        for p_id, intset in self.iter():
-            if not intset.is_equal(atoms.get_atoms_id(p_id)):
+        pred_ids = self.get_pred_ids().union(atoms.get_pred_ids())
+        for p_id in pred_ids:
+            if not self.get_atoms_id(p_id).is_equal(atoms.get_atoms_id(p_id)):
                 return False
         return True
 
@@ -155,18 +166,18 @@ class AtomDict:
             atoms.add_atoms_ids(p_id, intset)
         return atoms
 
-    def symmetric_difference(self, other: AtomDict):
+    def difference(self, other: AtomDict):
         atoms = copy.deepcopy(self)
+        pred_ids = atoms.get_pred_ids()
         for p_id, intset in other.iter():
-            if p_id not in atoms.get_pred_ids():
-                atoms.add_atoms_ids(p_id, intset)
-            else:
-                atoms.get_atoms_id(p_id).symmetric_difference(intset)
+            if p_id in pred_ids:
+                atoms.remove_atoms_ids(p_id, intset)
         return atoms
 
 
 class StaticAtomDict():
-    def __init__(self, atoms: AtomDict):
+    def __init__(self, atoms: AtomDict=None):
+        atoms = atoms if atoms is not None else AtomDict()
         self.__atoms = atoms
         self.__hash = atoms.get_hash()
 
@@ -179,12 +190,25 @@ class StaticAtomDict():
     def has_ids(self, p_id, v_id):
         return self.__atoms.has_ids(p_id, v_id)
 
+    def get_pred_ids(self):
+        return self.__atoms.get_pred_ids()
+
+    def get_atoms_id(self, p_id):
+        return self.__atoms.get_atoms_id(p_id)
+
+    def iter(self):
+        for it in self.__atoms.iter():
+            yield it
+
     def iter_ids(self):
         for p_id, v_id in self.__atoms.iter_ids():
             yield p_id, v_id
 
     def join(self, other: AtomDict):
         return self.__atoms.join(other)
+
+    def difference(self, other: AtomDict):
+        return self.__atoms
 
     def __hash__(self):
         return self.__hash

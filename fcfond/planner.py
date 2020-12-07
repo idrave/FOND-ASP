@@ -19,7 +19,7 @@ class DualFondQnpPlanner(Planner):
     def __init__(self):
         pass
 
-    def relevant_symbols(self, domain, logdict: dict=None):
+    def relevant_symbols(self, domain, logdict: dict=None, **kwargs):
         if logdict != None:
             start = time.time()
         rules = (

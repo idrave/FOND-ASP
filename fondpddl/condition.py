@@ -37,6 +37,14 @@ class Precondition(ABC):
     def __str__(self):
         raise NotImplementedError
 
+    @abstractmethod
+    def add_ground_act(self, id, problem: Problem):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_ground_act(self, state: State, problem: Problem):
+        raise NotImplementedError
+
     @abstractstaticmethod
     def parse(pddl_tree: PddlTree, objects, predicates, types): #TODO bug: called in subclasses without parse method
         prec = {
@@ -62,10 +70,17 @@ class Precondition(ABC):
 
 class EmptyCondition(Precondition):
     def __init__(self):
+        self.__ground_acts = set()
         pass
 
     def __str__(self):
         return '()'
+
+    def add_ground_act(self, id, problem: Problem):
+        self.__ground_acts.add(id)
+
+    def get_ground_act(self, state: State, problem: Problem):
+        return self.__ground_acts
 
     def evaluate(self, state: State, problem: Problem):
         return True
@@ -97,12 +112,26 @@ class EmptyCondition(Precondition):
 class And(Precondition):
     def __init__(self, conditions: List[Precondition]):
         self.conditions = conditions
+        self.__ground_actions = set()
 
     def evaluate(self, state: State, problem: problem):
         for condition in self.conditions:
             if not condition.evaluate(state, problem):
                 return False
         return True
+
+    def add_ground_act(self, id, problem: Problem):
+        self.__ground_actions.add(id)
+        for condition in self.conditions:
+            condition.add_ground_act(id, problem)
+
+    def get_ground_act(self, state: State, problem: Problem):
+        ground_acts = set(self.__ground_actions)
+        for condition in self.conditions:
+            if len(ground_acts) == 0:
+                return ground_acts
+            ground_acts = ground_acts.intersection(condition.get_ground_act(state, problem))
+        return ground_acts
 
     def evaluate_static(self, state: State, problem: Problem, positive, negative):
         f = False
@@ -148,6 +177,14 @@ class And(Precondition):
 class Not(Precondition):
     def __init__(self, condition: Precondition):
         self.condition = condition
+        self.__ground_acts = set()
+
+    def add_ground_act(self, id, problem: Problem):
+        self.__ground_acts.add(id)
+        self.condition.add_ground_act(id, problem)
+
+    def get_ground_act(self, state: State, problem: Problem):
+        return self.__ground_acts.difference(self.condition.get_ground_act(state, problem))
 
     def evaluate(self, state: State, problem: Problem):
         return not self.condition.evaluate(state, problem)
@@ -190,6 +227,16 @@ class Or(Precondition):
             if condition.evaluate(state, problem):
                 return True
         return False
+
+    def add_ground_act(self, id, problem: Problem):
+        for condition in self.conditions:
+            condition.add_ground_act(id, problem)
+
+    def get_ground_act(self, state: State, problem: Problem):
+        ground_act = set()
+        for condition in self.conditions:
+            ground_act = ground_act.union(condition.get_ground_act(state, problem))
+        return ground_act
 
     def evaluate_static(self, state: State, problem: Problem, positive, negative):
         t = False
@@ -237,12 +284,39 @@ class Variable(Precondition, fondpddl.effect.Effect):
             if param.ctype != None and not const.ctype.is_subtype(param.ctype):
                 print(const.name, const.ctype.name)
                 raise ValueError(f'Wrong argument type {const.ctype} for {predicate.name}')
+        self.__ground_map = {}
     
     def __str__(self):
         return self.predicate.name+'('+','.join([const.name for const in self.constants])+')'
 
+    def add_ground_act(self, id, problem: Problem):
+        var_id = self.ground(problem).get_id()
+        if var_id not in self.__ground_map:
+            self.__ground_map[var_id] = set()
+        self.__ground_map[var_id].add(id)
+
+    def get_ground_act(self, state: State, problem: Problem):
+        ground_acts = set()
+        check_const = [(i, const) for i, const in enumerate(self.constants) if const.is_ground()]
+        pred_id = self.predicate.get_id()
+        for var_id in state.get_atoms(self.predicate):
+            valid = True
+            for i, const in check_const:
+                gvar = problem.get_variable(pred_id, var_id)
+                if const.get_constant().id != gvar.constants[i].id:
+                    valid = False
+                    break
+            if valid:
+                ground_acts = ground_acts.union(self.__ground_map.get((pred_id, var_id), set()))
+        return ground_acts
+
+    def ground(self, problem: Problem):
+        g = GroundVar(self)
+        g.set_id(problem)
+        return g
+
     def evaluate(self, state: State, problem: Problem):
-        return state.get_value(self, problem)
+        return state.get_value(self.ground(problem))
 
     def evaluate_static(self, state, problem, positive, negative):
         if self.evaluate(state, problem):
@@ -316,7 +390,7 @@ class Variable(Precondition, fondpddl.effect.Effect):
         return Variable.parse(pddl_tree, objects, predicates, types)
 
 
-class GroundVar:
+class GroundVar(fondpddl.effect.EffectGround):
     def __init__(self, variable: Variable):
         self.predicate = variable.predicate
         self.constants = []
@@ -328,18 +402,46 @@ class GroundVar:
             self.constants.append(c)
             self.__const_ids.append(c.get_id())
         self.__const_ids = tuple(self.__const_ids)
+        self.__id = None
     
     def evaluate(self, state: State, problem: Problem):
-        return state.get_value(self, problem)
+        if self.__id == None:
+            self.set_id(problem)
+        return state.get_value(self)
 
     def get_id(self):
-        raise NotImplementedError
+        if self.__id == None:
+            raise ValueError('No id set for variable')
+        return self.predicate.get_id(), self.__id
+
+    def set_id(self, problem: Problem):
+        self.__id = problem.get_variable_index(self)
 
     def get_const_ids(self):
         return self.__const_ids
 
+    def is_conditional(self):
+        return False
+
+    def get_effects(self, problem:Problem, state:State=None):
+        if self.__id == None:
+            self.set_id(problem)
+        yield AtomDict([self]), AtomDict()
+
     def __str__(self):
         return self.predicate.name+'('+','.join([const.name for const in self.constants])+')'
+
+    def __hash__(self):
+        return hash((self.predicate.get_id(),)+self.get_const_ids())
+
+    def __eq__(self, other):
+        if not isinstance(other, GroundVar):
+            return False
+        if self.predicate.get_id() != other.predicate.get_id():
+            return False
+        if self.get_const_ids() != other.get_const_ids():
+            return False
+        return True
 
 
 class ForAll(Precondition):
@@ -354,6 +456,20 @@ class ForAll(Precondition):
                 return False
             self.argument.reset()
         return True
+
+    def add_ground_act(self, id, problem: Problem):
+        for constant in problem.get_constants(ctype=self.argument.ctype):
+            self.argument.ground(constant)
+            self.condition.add_ground_act(id, problem)
+            self.argument.reset()
+
+    def get_ground_act(self, state: State, problem: Problem):
+        ground_acts = set()
+        for constant in problem.get_constants(ctype=self.argument.ctype):
+            self.argument.ground(constant)
+            ground_acts = ground_acts.union(self.condition.get_ground_act(state, problem))
+            self.argument.reset()
+        return ground_acts
 
     def evaluate_static(self, state: State, problem: Problem, positive, negative):
         f = False

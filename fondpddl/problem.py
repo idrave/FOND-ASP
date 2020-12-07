@@ -1,9 +1,11 @@
 from fondpddl import Domain, Constant, ConstType, GroundAction, State
 import fondpddl.condition
+from fondpddl.action import ProblemAction
 from fondpddl.condition import Variable, GroundVar, Precondition, EmptyCondition
 from fondpddl.effect import AndEffect, Init, EmptyEffect, Effect
 from fondpddl.constant import parse_objects
 from fondpddl.utils import Index, get_combinations, StaticBitSet
+from fondpddl.utils.atomdict import StaticAtomDict
 from fondpddl.utils.tokens import PddlIter, PddlTree
 from typing import List, Generator, Iterator, Tuple
 
@@ -24,14 +26,23 @@ class Problem:
         self.goal = goal
         self.set_fairness(fair, constraints)
 
-        self.var_index = Index()
+        self.var_index = {pred.get_id(): Index() for pred in self.domain.predicates}
         if domain.is_typed():
             self.by_type = domain.by_type
             for const in self.objects:
                 if const.ctype not in self.by_type:
                     raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
                 self.by_type[const.ctype].append(const)
-        self.__ground_actions = self.possible_ground_actions()
+
+        self.__positive = set()
+        self.__negative = set()
+        for action in self.domain.actions:
+            pos, neg = action.effect.get_predicates()
+            self.__positive.update(pos)
+            self.__negative.update(neg)
+        
+        self.__prob_actions = [ProblemAction(action, self) for action in self.domain.actions]
+        print(len(self.__prob_actions))
 
     def set_fairness(self, fair: List[GroundAction],
                      constraints: List[Tuple[List[GroundAction], List[GroundAction]]]):
@@ -62,10 +73,9 @@ class Problem:
     def get_constant(self, c_id):
         return self.objects[c_id]
 
-    def get_variable_index(self, variable: Variable):
-        predicate = (variable.predicate, )
-        constants = tuple(const.get_constant() for const in variable.constants)
-        return self.var_index.get_index(predicate + constants)
+    def get_variable_index(self, variable: GroundVar):
+        id = self.var_index[variable.predicate.get_id()].get_index(variable)
+        return id
 
     def ground_actions(self) -> Generator[GroundAction, None, None]:
         for action in self.domain.actions:
@@ -76,9 +86,13 @@ class Problem:
                 ground_act = action.ground(params)
                 assert isinstance(ground_act, GroundAction)
                 yield ground_act
-    
-    def get_ground_actions(self):
-        return self.__ground_actions
+
+    def get_pos_neg_preds(self):
+        '''
+        Returns predicates for which some action's effect might change a ground atom
+        of such predicate to true or to false.
+        '''
+        return self.__positive, self.__negative
 
     def possible_ground_actions(self):
         ground_actions = []
@@ -95,13 +109,18 @@ class Problem:
         return ground_actions
 
     def get_initial_states(self) -> Iterator[State]:
-        for effects in AndEffect(self.init).get_effects(State(StaticBitSet(bytearray())), self):
-            yield State.from_atomset(effects)
+        init = AndEffect(self.init)
+        for effects, _ in init.ground(self).get_effects(self, StaticAtomDict()):
+            yield State.open_state(StaticAtomDict(effects))
     
     def valid_actions(self, state: State) -> Iterator[GroundAction]:
-        for action in self.get_ground_actions():
+        for action in self.ground_actions():
             if action.is_valid(state, self):
                 yield action
+    '''def valid_actions(self, state: State) -> Iterator[GroundAction]:
+        for action in self.__prob_actions:
+            for ground_act in action.get_valid_actions(state):
+                yield ground_act'''
     '''
     def valid_actions(self, state: State) -> Iterator[GroundAction]:
         atom_dict = state.get_atom_dict(self)
@@ -111,21 +130,18 @@ class Problem:
                     yield g_action'''
 
     def apply_action(self, state: State, action: GroundAction)-> Iterator[State]:
-        for effects in action.get_effects(state, self):
-            st = state.change_values(effects)
+        for positive, negative in action.get_effects(state, self):
+            st = state.change_values(positive, negative)
             yield st
 
     def is_goal(self, state: State)->bool:
         return self.goal.evaluate(state, self)
 
-    def get_variable(self, index):
-        var = self.var_index[index]
-        pred = var[0]
-        consts = var[1:]
-        return GroundVar(Variable(pred, consts))
+    def get_variable(self, pred_id, var_id):
+        return self.var_index[pred_id][var_id]
 
-    def print_variable(self, index):
-        print(str(self.get_variable(index)))
+    def print_variable(self, pred_id, var_id):
+        print(str(self.get_variable(pred_id, var_id)))
 
     def str_constraints(self):
         constraints = []
@@ -210,7 +226,7 @@ class Problem:
     def parse_objects(pddl_tree: PddlTree, domain: Domain, problem_params):
         if PROBLEM_OBJ in problem_params:
             raise ValueError('Redefinition of objects')
-        obj_index = Index(domain.constants.elems)
+        obj_index = Index(domain.constants)
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':objects')
         if domain.is_typed():

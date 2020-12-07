@@ -37,7 +37,7 @@ def get_experiments():
     
     return experiments
 
-def run_experiments(names, output=None, log=False, n=1, planner=None, expgoal=False, k=None, threads=1):
+def run_experiments(names, output=None, log=False, n=1, planner=None, expgoal=False, k=None, threads=1, N=3):
     experiments = get_experiments()
     results = []
     for name in names:
@@ -50,7 +50,7 @@ def run_experiments(names, output=None, log=False, n=1, planner=None, expgoal=Fa
         if not out_path.is_dir():
             out_path.mkdir(parents=True)
 
-        res = run_experiment(name, experiments, output, log=log, n=n, planner=planner, expgoal=expgoal, k=k, threads=threads)
+        res = run_experiment(name, experiments, output, log=log, n=n, planner=planner, expgoal=expgoal, k=k, threads=threads,N=N)
         for result in res:
             format_results(result)
         results += res
@@ -69,7 +69,7 @@ def run_experiments(names, output=None, log=False, n=1, planner=None, expgoal=Fa
     with open(str(Path(output)/'stdout.txt'), 'w') as fp:
         fp.write(stdout)
 
-def run_experiment(name, experiments, output, log=False, n=1, planner=None, expgoal=False, k=None, threads=1):
+def run_experiment(name, experiments, output, log=False, n=1, planner=None, expgoal=False, k=None, threads=1, N=3):
     print(name)
     if name in experiments:
         experiment = experiments[name]
@@ -80,7 +80,7 @@ def run_experiment(name, experiments, output, log=False, n=1, planner=None, expg
         print(experiment[EXPERIMENTS])
         for exp in experiment[EXPERIMENTS]:
             result = run_experiment(exp, experiments, output=output, log=log, planner=planner,
-                                     expgoal=expgoal, k=k, threads=threads)
+                                     expgoal=expgoal, k=k, threads=threads, N=N)
             results.append(result)
         return experiment[CALLBACK](experiment, results)
 
@@ -88,7 +88,7 @@ def run_experiment(name, experiments, output, log=False, n=1, planner=None, expg
     if experiment[ENCODING] == CLINGO:
         results = solve_clingo(
                     experiment[PROB_NAME], experiment[CLINGO_PROBLEM],
-                    planner(), output, pre_process=True, k=k, n=n, threads=threads) #TODO preprocess can be changed
+                    planner(), output, pre_process=True, k=k, n=n, threads=threads, N=N) #TODO preprocess can be changed
     else:
         assert experiment[ENCODING] == PDDL
         results = solve_pddl(

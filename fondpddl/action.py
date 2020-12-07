@@ -5,7 +5,7 @@ if typing.TYPE_CHECKING:
 from fondpddl.condition import Precondition, EmptyCondition, GroundVar
 from fondpddl.effect import Effect, EmptyEffect
 from fondpddl.utils.tokens import PddlIter, PddlTree
-from fondpddl.utils import Index, get_combinations
+from fondpddl.utils import Index, get_combinations, find_combination
 from fondpddl.argument import parse_parameters
 from fondpddl import Argument, Constant, Predicate, ConstType, ActionParam
 from typing import List
@@ -53,7 +53,7 @@ class Action:
                               f' parameters, received {len(constants)}'))
         for arg, const in zip(self.parameters, constants):
             if arg.ctype != None and not const.has_type(arg.ctype):
-                return None
+                return None #TODO might raise some unexpected behavior
         return GroundAction(self, constants)
 
     def __str__(self):
@@ -91,11 +91,63 @@ class Action:
         effects = effects if effects != None else EmptyEffect()
         return Action(action_name, params, preconditions, effects)
 
+class ProblemAction:
+    def __init__(self, action: Action, problem: Problem):
+        self.__action = action
+        self.__problem = problem
+        #self.__ground = []
+        self.__ground = {}
+        valid_params = []
+        positive, negative = problem.get_pos_neg_preds()
+        for param in self.__action.parameters:
+            valid_params.append(self.__problem.get_constants(param.ctype))
+        self.__valid_params = valid_params
+        total = 1
+        for p in valid_params:
+            total *= len(p)
+        '''
+        for params in get_combinations(valid_params, [], lambda l,x: l + [x]):
+            ground_act = self.__action.ground(params)
+            assert isinstance(ground_act, GroundAction)
+            for s0 in problem.get_initial_states():
+                if ground_act.is_valid_static(s0, problem, positive, negative):
+                    self.__ground.append(ground_act)
+                    break
+        for i, ground_act in enumerate(self.__ground):
+            ground_act.add_id_to_condition(i, problem)
+        '''
+        for i, params in enumerate(get_combinations(valid_params, [], lambda l,x: l + [x])):
+            ground_act = self.__action.ground(params)
+            assert isinstance(ground_act, GroundAction)
+            ground_act.add_id_to_condition(i, problem)
+
+    def get_valid_actions(self, state: State):
+        for g_id in self.__action.precondition.get_ground_act(state, self.__problem):
+            if g_id not in self.__ground:
+                constants = find_combination(self.__valid_params, g_id)
+                self.__ground[g_id] = self.__action.ground(constants)
+            yield self.__ground[g_id]
+
+
 class GroundAction:
     def __init__(self, action: Action, constants: List[Constant]):
         self.action = action
         self.constants = constants
+        self.__effect = None
         #TODO: should check arity and type here?
+
+    def add_id_to_condition(self, id, problem):
+        self.ground()
+        self.action.precondition.add_ground_act(id, problem)
+        self.reset()
+
+    def ground(self):
+        for param, const in zip(self.action.parameters, self.constants):
+            param.ground(const)
+
+    def reset(self):
+        for param in self.action.parameters:
+            param.reset()
 
     def is_valid(self, state: State, problem: Problem):
         for param, const in zip(self.action.parameters, self.constants):
@@ -116,7 +168,9 @@ class GroundAction:
     def get_effects(self, state: State, problem: Problem):
         for param, const in zip(self.action.parameters, self.constants):
             param.ground(const)
-        for effect in self.action.effect.get_effects(state, problem):
+        if self.__effect == None:
+            self.__effect = self.action.effect.ground(problem)
+        for effect in self.__effect.get_effects(problem, state):
             yield effect
         for param in self.action.parameters:
             param.reset()

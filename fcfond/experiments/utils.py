@@ -18,6 +18,18 @@ def add_pddl_experiment(experiments, name, key, domain,
         CALLBACK: callback
     }
 
+def add_clingo_experiment(experiments, name, key,
+                        problem, output, planner, callback=None):
+    experiments[key] = {
+        PROB_NAME : name,
+        ENCODING : CLINGO,
+        CLINGO_PROBLEM : problem,
+        PDDL_PROBLEM : problem,
+        OUTPUT : output,
+        PLANNER : planner,
+        CALLBACK: callback
+    }
+
 def concat_results(experiment, results):
     final = []
     for result in results:

@@ -3,81 +3,54 @@ import typing
 if typing.TYPE_CHECKING:
     from fondpddl import Problem
 from fondpddl import GroundAction, Predicate
-from fondpddl.condition import Variable
+from fondpddl.condition import GroundVar
 from fondpddl.utils import BitSet, StaticBitSet, AtomSet
 from typing import List, Tuple, Optional
-from fondpddl.utils.atomdict import AtomDict
+from fondpddl.utils.atomdict import StaticAtomDict, AtomDict
 import clingo
 
 #TODO: handle expanded better
 class State:
-    def __init__(self, bitset: StaticBitSet,
+    def __init__(self, atoms: StaticAtomDict,
                  transitions: Optional[List[Tuple[GroundAction,List[State]]]] = None,
                  is_init: Optional[bool] = None,
                  is_goal: Optional[bool] = None):
-        self.bitset = bitset
-        self.atoms = [i for i, b in enumerate(bitset) if b]
+        self.atoms = atoms
         self.transitions = transitions
         self.expanded = True
         self.is_goal = is_goal
         self.is_init = is_init
 
+    def get_atoms(self, predicate):
+        return self.atoms.get_atoms(predicate)
+
     @classmethod
-    def open_state(cls, bitset: StaticBitSet):
-        state = cls(bitset)
+    def open_state(cls, atoms: StaticAtomDict):
+        state = cls(atoms)
         state.expanded = False
         return state
 
-    @classmethod
-    def from_atomset(cls, atoms: AtomSet):
-        bs = BitSet()
-        for pos in atoms.positive:
-            bs[pos] = 1
-        return State.open_state(StaticBitSet(bs))
-        #TODO:should use negative?
+    def get_value(self, variable: GroundVar):
+        return self.atoms.has(variable)
 
-    def true_atoms(self):
-        return self.atoms
-
-    def get_atom_dict(self, problem: Problem):
-        atoms = AtomDict()
-        for i in self.atoms:
-            var = problem.get_variable(i)
-            atoms.add_atom(var)
-        return atoms
-
-    def get_value(self, variable: Variable, problem: Problem):
-        return self.bitset[problem.get_variable_index(variable)]
-
-    def change_values(self, atoms: AtomSet) -> State:
-        bs = BitSet.from_bitmask(self.bitset)
-        for atom in atoms.positive:
-            bs[atom] = 1
-        for atom in atoms.negative:
-            bs[atom] = 0
-        return State.open_state(StaticBitSet(bs))
+    def change_values(self, atoms: AtomDict, negate: AtomDict) -> State:
+        new_atoms = self.atoms.join(atoms).difference(negate)
+        return State.open_state(StaticAtomDict(new_atoms))
 
     def __hash__(self):
-        return hash(self.bitset)
+        return hash(self.atoms)
 
     def __eq__(self, other):
         if not isinstance(other, State):
             return False
-        if len(self.atoms) != len(other.atoms):
-            return False
-        for a, b in zip(self.atoms, other.atoms):
-            if a != b:
-                return False
-        return True
+        return self.atoms == other.atoms
 
     def string(self, problem: Problem):
-        variables = [problem.get_variable(i) for i in self.atoms]
+        variables = [problem.get_variable(p_id, v_id) for p_id, v_id in self.atoms.iter_ids()]
         return '<' + ','.join(list(map(str, variables))) + '>'
 
     def print_state(self, problem: Problem):
-        for i, bit in enumerate(self.bitset):
-            if bit:
-                problem.print_variable(i)
+        print(self.string(problem))
 
     def encode_clingo(self, state_names, action_names):
         name = state_names.get_index(self)

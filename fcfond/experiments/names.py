@@ -14,4 +14,6 @@ EXPERIMENTS = 'experiments'
 CALLBACK = 'callback'
 
 PDDL_DOM_PATHS = Path(__file__).parent.parent/'domains'/'pddl'
+CLINGO_DOM_PATHS = Path(__file__).parent.parent/'domains'/'clingo'
+
 DEFAULT_OUT = Path(__file__).parent.parent/'res'

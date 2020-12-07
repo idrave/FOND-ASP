@@ -13,6 +13,7 @@ def parse_args():
     parser.add_argument('-k', nargs='?', const='3', default=None)
     parser.add_argument('-n', type=int, default=1, help='Number of policies (if 0 return all)')
     parser.add_argument('-t', type=int, default=1, help='Number of threads')
+    parser.add_argument('-N', type=int, default=[], help='Domain size for qnp')
     parser.add_argument('--print', action='store_true')
     return parser.parse_args()
 
@@ -26,7 +27,7 @@ def main():
     else:
         planner = None
     run_experiments(args.experiments, output=args.out, log=args.log,
-                    n=args.n, planner=planner, expgoal=args.expgoal, k=args.k, threads=args.t)
+                    n=args.n, planner=planner, expgoal=args.expgoal, k=args.k, threads=args.t, N=args.N)
 
 if __name__ == "__main__":
     main()

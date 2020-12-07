@@ -30,12 +30,6 @@ edge(S1, S2) :- transition(S1, Action, S2), policy(S1, Action), reach(S1), not g
 connected(S1, S2) :- edge(S1, S2).
 connected(S1, St3) :- connected(S1, S2), edge(S2, St3), S1 != S2.
 
-% check whether all paths from S1 to S3 going through S2 have terminating nodes
-%nopath(S1, T, S2) :-
-%    edge(S1, T), connected(T, S2), terminating(S1;T;S2).
-    
-%nopath(S1, T, S2) :- 
-%    edge(S1, S2), connected(T, S2), nopath(T, S2).
 
 % check whether all paths from S1 to S2 have terminating edges
 nopath(S1, S2) :-

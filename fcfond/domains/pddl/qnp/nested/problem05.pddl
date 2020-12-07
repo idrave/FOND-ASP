@@ -1,0 +1,8 @@
+(define (problem nestedqnp05) (:domain nestedqnp05)
+	(:init (gr0_1) (gr0_2) (gr0_3) (gr0_4) (gr0_5) (p))
+	(:goal (not (gr0_5)))
+	(:constraint :a (a1) :b (a2) (a3) (a4) (a5))
+	(:constraint :a (a2) :b (a3) (a4) (a5))
+	(:constraint :a (a3) :b (a4) (a5))
+	(:constraint :a (a4) :b (a5))
+	(:constraint :a (a5)))

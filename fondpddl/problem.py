@@ -42,7 +42,6 @@ class Problem:
             self.__negative.update(neg)
         
         self.__prob_actions = [ProblemAction(action, self) for action in self.domain.actions]
-        print(len(self.__prob_actions))
 
     def set_fairness(self, fair: List[GroundAction],
                      constraints: List[Tuple[List[GroundAction], List[GroundAction]]]):
@@ -243,7 +242,7 @@ class Problem:
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':init')
         inits = []
-        objects = problem_params.get(PROBLEM_OBJ, [])
+        objects = problem_params.get(PROBLEM_OBJ, []) + domain.constants
         objects = {obj.name : obj for obj in objects}
         predicates = {pred.name: pred for pred in domain.predicates}
         if domain.is_typed():
@@ -261,7 +260,7 @@ class Problem:
             raise ValueError('Redefinition of goal')
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':goal')
-        objects = problem_params.get(PROBLEM_OBJ,[])
+        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
         objects = {obj.name: obj for obj in objects}
         predicates = {pred.name: pred for pred in domain.predicates}
         if domain.is_typed():
@@ -280,7 +279,7 @@ class Problem:
         pddl_iter.assert_token(':fair')
         g_actions = []
         actions = domain.actions
-        objects = problem_params.get(PROBLEM_OBJ,[])
+        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
         while pddl_iter.has_next():
             action = GroundAction.parse(pddl_iter.get_group(), actions, objects)
             if PROBLEM_QNP in problem_params:
@@ -295,7 +294,7 @@ class Problem:
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':constraint')
         actions = domain.actions
-        objects = problem_params.get(PROBLEM_OBJ,[])
+        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
         a = None
         b = None
         while pddl_iter.has_next():

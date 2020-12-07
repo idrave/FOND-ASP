@@ -161,7 +161,7 @@ class AndGround(EffectGround):
             if effect.is_conditional():
                 self.__cond.append(effect)
             else:
-                self.__effects = list(get_combinations([self.__effects, effect.get_effects(problem)],
+                self.__effects = list(get_combinations([self.__effects, list(effect.get_effects(problem))],
                                     (AtomDict([]),AtomDict([])), lambda a, b: (a[0].join(b[0]), a[1].join(b[1]))))
     
     def is_conditional(self):
@@ -173,7 +173,7 @@ class AndGround(EffectGround):
             for effect in self.__effects:
                 yield effect
             return
-        cond_effects = [e.get_effects(problem, state) for e in self.__cond]
+        cond_effects = [list(e.get_effects(problem, state)) for e in self.__cond]
         effects = get_combinations([self.__effects]+cond_effects, (AtomDict([]), AtomDict([])),
                                     lambda a, b: (a[0].join(b[0]), a[1].join(b[1])))
         for effect in effects:

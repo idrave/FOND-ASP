@@ -34,7 +34,9 @@ class State:
         return self.atoms.has(variable)
 
     def change_values(self, atoms: AtomDict, negate: AtomDict) -> State:
-        new_atoms = self.atoms.join(atoms).difference(negate)
+        pos = atoms.difference(negate)
+        neg = negate.difference(atoms)
+        new_atoms = self.atoms.join(pos).difference(neg)
         return State.open_state(StaticAtomDict(new_atoms))
 
     def __hash__(self):

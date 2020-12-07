@@ -2,7 +2,7 @@ from typing import List, Optional, Hashable
 
 class Index:
     def __init__(self, elems: Optional[List[Hashable]]=None):
-        self.elems = elems if elems != None else []
+        self.elems = list(elems) if elems != None else []
         self.index = {elem: i for elem, i in enumerate(self.elems)}
     
     def __len__(self):

@@ -6,28 +6,45 @@ QNP_DOM_PATHS = PDDL_DOM_PATHS/'qnp'
 DEFAULT_OUT_QNP = DEFAULT_OUT/'qnp'
 
 def get_experiments():
-    experiments = {}
+    base_qnp = {}
 
-    add_pddl_experiment(experiments, 'clear', 'clear_qnp',
+    add_pddl_experiment(base_qnp, 'clear', 'clear_qnp',
                         QNP_DOM_PATHS/'clear_d.pddl', QNP_DOM_PATHS/'clear_p.pddl',
                         DEFAULT_OUT_QNP/'clear_qnp', QNPPlanner)
 
-
-    add_pddl_experiment(experiments, 'on', 'on_qnp',
+    add_pddl_experiment(base_qnp, 'on', 'on_qnp',
                         QNP_DOM_PATHS/'on_d.pddl', QNP_DOM_PATHS/'on_p.pddl',
                         DEFAULT_OUT_QNP/'on_qnp', QNPPlanner)
 
-    add_pddl_experiment(experiments, 'gripper', 'gripper_qnp',
+    add_pddl_experiment(base_qnp, 'gripper', 'gripper_qnp',
                         QNP_DOM_PATHS/'gripper_d.pddl', QNP_DOM_PATHS/'gripper_p.pddl',
                         DEFAULT_OUT_QNP/'gripper_qnp', QNPPlanner)
 
-
-    add_pddl_experiment(experiments, 'delivery', 'delivery_qnp',
+    add_pddl_experiment(base_qnp, 'delivery', 'delivery_qnp',
                         QNP_DOM_PATHS/'delivery_d.pddl', QNP_DOM_PATHS/'delivery_p.pddl',
                         DEFAULT_OUT_QNP/'delivery_qnp', QNPPlanner)
 
-    add_experiment_list(experiments, 'qnp', 'qnp', list(experiments.keys()), DEFAULT_OUT_QNP/'all')
+    add_experiment_list(base_qnp, 'qnp', 'qnp', list(base_qnp.keys()), DEFAULT_OUT_QNP/'all')
 
-    
+    sequential = {}
+    for i in range(2, 11):
+        si = str(i).zfill(2)
+        add_pddl_experiment(sequential, 'sequential%s'%(si), 'sequential%s'%(si),
+                        QNP_DOM_PATHS/'sequential'/'domain.pddl', QNP_DOM_PATHS/'sequential'/('p%s.pddl'%(si)),
+                        DEFAULT_OUT_QNP/'sequential'/('p%s'%(si)), QNPPlanner)
+    add_experiment_list(sequential, 'sequential', 'sequential', list(sequential.keys()), DEFAULT_OUT_QNP/'sequential'/'all')
+
+    nested = {}
+    for i in range(2, 11):
+        si = str(i).zfill(2)
+        add_pddl_experiment(nested, 'nested%s'%(si), 'nested%s'%(si),
+                        QNP_DOM_PATHS/'nested'/('domain%s.pddl'%(si)), QNP_DOM_PATHS/'nested'/('problem%s.pddl'%(si)),
+                        DEFAULT_OUT_QNP/'nested'/('p%s'%(si)), QNPPlanner)
+    add_experiment_list(nested, 'nested', 'nested', list(sequential.keys()), DEFAULT_OUT_QNP/'nested'/'all')
+
+    experiments = {}
+    experiments.update(base_qnp)
+    experiments.update(sequential)
+    experiments.update(nested)
 
     return experiments

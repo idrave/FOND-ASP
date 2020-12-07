@@ -52,7 +52,8 @@ class FairnessNoIndex(DualFondQnpPlanner):
         return run_profile(args)
 
 class QNPPlanner(FairnessNoIndex):
-    FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_qnp.lp'
+    #FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_qnp.lp'
+    FILE = Path(__file__).parent/'planner_clingo'/'planner_fondp.lp'
     def solve(self, domain, n=1, threads=1, **kwargs):
         args = ['clingo', QNPPlanner.FILE, domain, '-n', str(n), '-t', str(threads)]
         print(args)

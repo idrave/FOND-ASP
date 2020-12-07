@@ -1,0 +1,21 @@
+(define (problem sequentialqnp05) (:domain sequentialqnp)
+    (:objects v0 v1 v2 v3 v4 v5) ; v0 always 0
+    (:init
+        (gr0 v1)
+        (gr0 v2)
+        (gr0 v3)
+        (gr0 v4)
+        (gr0 v5)
+        (next v0 v1)
+        (next v1 v2)
+        (next v2 v3)
+        (next v3 v4)
+        (next v4 v5)
+        (p))
+
+    (:goal (not (gr0 v5)))
+    (:constraint :a (a v0 v1))
+    (:constraint :a (a v1 v2))
+    (:constraint :a (a v2 v3))
+    (:constraint :a (a v3 v4))
+    (:constraint :a (a v4 v5)))

@@ -45,24 +45,7 @@ def profile(pipe, pid, time_limit, memory_limit):
     pipe.send({MEMORY: mem, STATUS: status})
     pipe.recv()
 
-'''
-def run_profile(args, profile=profile, time_limit=10.0, memory_limit=4e9):
-    parent_conn, child_conn = multiprocessing.Pipe(duplex=True)
-    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
-    prof = multiprocessing.Process(target=profile, args=(child_conn, proc.pid, time_limit, memory_limit))
-    prof.start()
-    child_conn.close()
-    out = proc.stdout.read().decode('utf-8')
-    proc.wait()
-    parent_conn.send(1)
-    prof_out = parent_conn.recv()
-    parent_conn.send(1)
-    prof.join()
-    parent_conn.close()
-    child_conn.close()
-    return out, prof_out
-'''
-def run_profile(args, profile=profile, time_limit=10.0, memory_limit=4e9):
+def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
     ps = subprocess.Popen(args, stdout=subprocess.PIPE)
     proc = psutil.Process(pid=ps.pid)
     memory = []

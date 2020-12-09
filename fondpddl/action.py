@@ -103,10 +103,13 @@ class Action:
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':action')
         action_name = pddl_iter.get_name()
-        pddl_iter.assert_token(':parameters')
-        param_tokens = pddl_iter.get_group()
-        params = parse_parameters(param_tokens.iter_elements(), types=types)
-        params = [ActionParam(arg, i) for i, arg in enumerate(params)]
+        if pddl_iter.is_next(':parameters'):
+            pddl_iter.assert_token(':parameters')
+            param_tokens = pddl_iter.get_group()
+            params = parse_parameters(param_tokens.iter_elements(), types=types)
+            params = [ActionParam(arg, i) for i, arg in enumerate(params)]
+        else:
+            params = []
         preconditions = None
         effects = None
         objects = {obj.name : obj for obj in constants + params}

@@ -17,7 +17,8 @@ if __name__ == "__main__":
         pr = cProfile.Profile()
         pr.enable()
         start = time.time()
-        encode_clingo_problem(args.domain, args.problem, iterator=BreadthFirstSearch(), log=args.log)
+        for _ in encode_clingo_problem(args.domain, args.problem, iterator=BreadthFirstSearch(), log=args.log):
+            pass
         print('Total Time:', time.time() - start)
         pr.disable()
         s = io.StringIO()
@@ -26,6 +27,6 @@ if __name__ == "__main__":
         ps.print_stats()
         print(s.getvalue())
     else:
-        symbols, ids = encode_clingo_problem(args.domain, args.problem, iterator=BreadthFirstSearch(), log=args.log, expand_goal=args.expgoal)
-        for sym in symbols + ids:
-            print(str(sym)+'.')
+        for sym in encode_clingo_problem(args.domain, args.problem, iterator=BreadthFirstSearch(), log=args.log, expand_goal=args.expgoal):
+            #print(str(sym)+'.')
+            pass

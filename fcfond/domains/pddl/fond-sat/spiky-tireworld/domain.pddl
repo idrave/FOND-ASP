@@ -11,7 +11,7 @@
   (:predicates (vehicle-at ?loc - location)
                (tire-at ?t - tire ?loc - location)
                (road ?from - location ?to - location)
-               (spiky_road ?from - location ?to - location)
+               (spiky-road ?from - location ?to - location)
                (not-flattire)
                (flattire)
                (hasspare ?t - tire)

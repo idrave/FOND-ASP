@@ -51,7 +51,7 @@ def get_experiments():
 
     domains = [('zenotravel', [15], True),
                ('elevators', [10, 5], True),
-               ('miner', [30, 21], True),
+               #('miner', [30, 21], True), #TODO pddl files have errors
                ('spiky-tireworld', [11], True),
                ('doors', [15], True),
                ('tireworld', [15], True),

@@ -90,17 +90,19 @@ def run_experiment(name, experiments, output, timelimit,
             results.append(result)
         return experiment[CALLBACK](experiment, results)
 
-    planner = planner if planner != None else experiment[PLANNER]
+    planner = planner if planner != None else experiment[PLANNER].FILE
     if experiment[ENCODING] == CLINGO:
+        print(planner)
         results = solve_clingo(
                     experiment[PROB_NAME], experiment[CLINGO_PROBLEM],
-                    planner(), output, timelimit, memlimit,
+                    planner, output, timelimit, memlimit,
                     pre_process=True, k=k, n=n, threads=threads) #TODO preprocess can be changed
     else:
         assert experiment[ENCODING] == PDDL
+        print(planner)
         results = solve_pddl(
                     experiment[PROB_NAME], experiment[PDDL_DOMAIN],
-                    experiment[PDDL_PROBLEM], planner(), output,
+                    experiment[PDDL_PROBLEM], planner, output,
                     experiment[GRAPH_ITER](), timelimit, memlimit, expand_goal=expgoal or experiment[EXPGOAL],
                     log=log, k=k, n=n, threads=threads)
     

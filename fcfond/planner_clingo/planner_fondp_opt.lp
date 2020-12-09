@@ -39,18 +39,9 @@ terminating(G) :- goal(G).
 
 terminating(S) :- reach(S), edge(S, T), terminating(T), nopath(S, S).
 
-% qnp like termination
+% rule 3
 terminating(S) :-
     policy(S, Act), con_A(Act, J), edge(S, T), terminating(T),
-    nopath_con(S, U, J): differ(S, U, J).
-
-% mark pairs of edges that decrease/decrease a variable respectively
-differ(S, T, J) :-
-    policy(S, A1), con_A(A1, J),
-    policy(T, A2), con_B(A2, J).
-
-%no path increasing variable that is decreased
-nopath_con(S, T, J) :- differ(S, T, J), nopath(S, T).
-nopath_con(S, T, J) :- differ(S, T, J), nopath(T, S).
+    1 {nopath(S, T); nopath(T, S): reach(T), policy(T, A2), con_B(A2, J)}.
 
 :-  not terminating(S), reach(S).

@@ -1,4 +1,5 @@
 from fcfond.profile import run_profile, parse_clingo_out, MAXMEM, MEMORY
+from fcfond.planner import DualFondQnpPlanner
 from fondpddl import encode_clingo_problem
 from fcfond.planner import Planner
 import argparse
@@ -45,7 +46,7 @@ def solve_pddl(name, domain_file, problem_file, planner: Planner,
     domain_file = processed
     logs[PREPROCESS] = time.time() - start
     print('Pddl processed')
-    output, profile = planner.solve(domain_file, timelimit-logs[PREPROCESS], memlimit,**kwargs)
+    output, profile = DualFondQnpPlanner().solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
     logs[STDOUT] = output
     return logs

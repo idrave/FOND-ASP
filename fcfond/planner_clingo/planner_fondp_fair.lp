@@ -6,8 +6,7 @@
 % con_A(A, I): action A belongs to set of constraints A_I
 % con_B(A, I): action A belongs to set of constraints B_I
 
-#show.
-#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS). %only for display purposes
+#show policy/2.
 
 % policy(S, A): the policy applies action A in S
 {policy(State, Action): action(Action)} = 1 :- state(State), reach(State), not goal(State).
@@ -27,22 +26,22 @@ edge(S1, S2) :- transition(S1, Action, S2), policy(S1, Action), reach(S1), not g
 connected(S1, S2) :- edge(S1, S2).
 connected(S1, S3) :- connected(S1, S2), edge(S2, S3), S1 != S2.
 
-%nopath/2: expresses that:
+%blocked/2: expresses that:
 % i) there is no path from s1 to s2, or
 % ii) all paths from s1 to s2 contain a state that has been marked as terminating
-nopath(S1, S2) :- reach(S1), reach(S2), not connected(S1, S2).
-nopath(S1, S2) :- connected(S1, S2), terminating(S1).
-nopath(S1, S2) :- connected(S1, S2), terminating(S2).
-nopath(S1, S2) :-
+blocked(S1, S2) :- reach(S1), reach(S2), not connected(S1, S2).
+blocked(S1, S2) :- connected(S1, S2), terminating(S1).
+blocked(S1, S2) :- connected(S1, S2), terminating(S2).
+blocked(S1, S2) :-
     connected(S1, S2),
-    nopath(T, S2) : edge(S1, T), connected(T, S2).
+    blocked(T, S2) : edge(S1, T), connected(T, S2).
 
 % fair/1: uses above symbols to express that the policy applies action from A_j in state s,
 % and there is a terminating state in all paths from s to itself passing through
 % a state that applies an action in B_j
 fair(S) :-
     policy(S, Act), con_A(Act, J),
-    nopath(T, S) : reach(T), policy(T, Act2), con_B(Act2, J), not nopath(S, T).
+    1 {blocked(T, S); blocked(S, T): reach(T), policy(T, Act2), con_B(Act2, J)}.
 
 % def 15: rule 1
 terminating(G) :- goal(G).
@@ -51,7 +50,7 @@ terminating(G) :- goal(G).
 terminating(S) :- reach(S), fair(S), edge(S, T), terminating(T).
 
 % def 15: rule 3
-terminating(S) :- reach(S), not fair(S), edge(S, _), terminating(T): edge(S, T).
+terminating(S) :- reach(S), edge(S, _), terminating(T): edge(S, T).
 
 % all states should terminate from goal
 :-  not terminating(S), reach(S).

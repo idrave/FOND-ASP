@@ -36,7 +36,7 @@ terminating(G) :- goal(G).
 terminating(S) :- reach(S), fair(S), edge(S, T), terminating(T).
 
 % def 15: rule 3
-terminating(S) :- reach(S), not fair(S), edge(S, _), terminating(T): edge(S, T).
+terminating(S) :- reach(S), edge(S, _), terminating(T): edge(S, T).
 
 % all states should terminate from goal
 :-  not terminating(S), reach(S).

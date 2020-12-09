@@ -15,6 +15,9 @@ class TypedObject(ABC):
     def has_type(self, ctype: ConstType):
         return self.ctype.is_subtype(ctype)
 
+    def is_act_param(self):
+        raise NotImplementedError
+
     @abstractmethod
     def get_constant(self) -> Constant:
         raise NotImplementedError
@@ -40,6 +43,9 @@ class Constant(TypedObject):
 
     def get_constant(self) -> Constant:
         return self
+
+    def is_act_param(self):
+        return False
 
     def __hash__(self):
         return hash(self.name)

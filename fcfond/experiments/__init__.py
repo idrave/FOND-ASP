@@ -31,13 +31,14 @@ def get_experiments():
                         FairnessNoIndex)
 
     add_experiment_list(experiments, 'benchmark_1', 'benchmark_1',
-                        list(fcfond.experiments.qnp.get_experiments().keys()) + \
+                        ['qnp'] + \
                         list(fcfond.experiments.ltl.get_experiments().keys()) + \
                         ['foot3x2'], DEFAULT_OUT/'benchmark_1')
     
     return experiments
 
-def run_experiments(names, output=None, log=False, n=1, planner=None, expgoal=False, k=None, threads=1, N=3):
+def run_experiments(names, timeout, memout, output=None, log=False, n=1, planner=None,
+                    expgoal=False, k=None, threads=1):
     experiments = get_experiments()
     results = []
     for name in names:
@@ -50,7 +51,9 @@ def run_experiments(names, output=None, log=False, n=1, planner=None, expgoal=Fa
         if not out_path.is_dir():
             out_path.mkdir(parents=True)
 
-        res = run_experiment(name, experiments, output, log=log, n=n, planner=planner, expgoal=expgoal, k=k, threads=threads,N=N)
+        res = run_experiment(name, experiments, output, timeout, memout, log=log,
+                             n=n, planner=planner, expgoal=expgoal,
+                             k=k, threads=threads)
         for result in res:
             format_results(result)
         results += res
@@ -69,7 +72,9 @@ def run_experiments(names, output=None, log=False, n=1, planner=None, expgoal=Fa
     with open(str(Path(output)/'stdout.txt'), 'w') as fp:
         fp.write(stdout)
 
-def run_experiment(name, experiments, output, log=False, n=1, planner=None, expgoal=False, k=None, threads=1, N=3):
+def run_experiment(name, experiments, output, timelimit,
+                   memlimit, log=False, n=1, planner=None, expgoal=False,
+                   k=None, threads=1):
     print(name)
     if name in experiments:
         experiment = experiments[name]
@@ -79,8 +84,9 @@ def run_experiment(name, experiments, output, log=False, n=1, planner=None, expg
         results = []
         print(experiment[EXPERIMENTS])
         for exp in experiment[EXPERIMENTS]:
-            result = run_experiment(exp, experiments, output=output, log=log, planner=planner,
-                                     expgoal=expgoal, k=k, threads=threads, N=N)
+            result = run_experiment(exp, experiments,output,timelimit, memlimit,
+                                     log=log, planner=planner,
+                                     expgoal=expgoal, k=k, threads=threads)
             results.append(result)
         return experiment[CALLBACK](experiment, results)
 
@@ -88,13 +94,14 @@ def run_experiment(name, experiments, output, log=False, n=1, planner=None, expg
     if experiment[ENCODING] == CLINGO:
         results = solve_clingo(
                     experiment[PROB_NAME], experiment[CLINGO_PROBLEM],
-                    planner(), output, pre_process=True, k=k, n=n, threads=threads, N=N) #TODO preprocess can be changed
+                    planner(), output, timelimit, memlimit,
+                    pre_process=True, k=k, n=n, threads=threads) #TODO preprocess can be changed
     else:
         assert experiment[ENCODING] == PDDL
         results = solve_pddl(
                     experiment[PROB_NAME], experiment[PDDL_DOMAIN],
                     experiment[PDDL_PROBLEM], planner(), output,
-                    experiment[GRAPH_ITER](), expand_goal=expgoal,
+                    experiment[GRAPH_ITER](), timelimit, memlimit, expand_goal=expgoal or experiment[EXPGOAL],
                     log=log, k=k, n=n, threads=threads)
     
     return [results]

@@ -12,6 +12,7 @@ PLANNER = 'planner'
 GRAPH_ITER = 'iter'
 EXPERIMENTS = 'experiments'
 CALLBACK = 'callback'
+EXPGOAL = 'expgoal'
 
 PDDL_DOM_PATHS = Path(__file__).parent.parent/'domains'/'pddl'
 CLINGO_DOM_PATHS = Path(__file__).parent.parent/'domains'/'clingo'

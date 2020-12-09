@@ -34,12 +34,12 @@ class Problem:
                     raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
                 self.by_type[const.ctype].append(const)
 
-        self.__positive = set()
+        '''self.__positive = set()
         self.__negative = set()
         for action in self.domain.actions:
             pos, neg = action.effect.get_predicates()
             self.__positive.update(pos)
-            self.__negative.update(neg)
+            self.__negative.update(neg)'''
         
         self.__prob_actions = [ProblemAction(action, self) for action in self.domain.actions]
 
@@ -70,7 +70,9 @@ class Problem:
         return self.by_type.get(ctype, [])
 
     def get_constant(self, c_id):
-        return self.objects[c_id]
+        if c_id >= len(self.domain.constants):
+            return self.objects[c_id]
+        return self.domain.constants[c_id]
 
     def get_variable_index(self, variable: GroundVar):
         id = self.var_index[variable.predicate.get_id()].get_index(variable)
@@ -86,12 +88,12 @@ class Problem:
                 assert isinstance(ground_act, GroundAction)
                 yield ground_act
 
-    def get_pos_neg_preds(self):
-        '''
+    '''def get_pos_neg_preds(self):
+        
         Returns predicates for which some action's effect might change a ground atom
         of such predicate to true or to false.
-        '''
-        return self.__positive, self.__negative
+        
+        return self.__positive, self.__negative'''
 
     def possible_ground_actions(self):
         ground_actions = []
@@ -111,32 +113,38 @@ class Problem:
         init = AndEffect(self.init)
         for effects, _ in init.ground(self).get_effects(self, StaticAtomDict()):
             yield State.open_state(StaticAtomDict(effects))
-    
+
+    def valid_actions(self, state: State) -> Iterator[GroundAction]:
+        for action in self.__prob_actions:
+            for gaction in action.get_ground(state, self):
+                yield gaction
+    '''
     def valid_actions(self, state: State) -> Iterator[GroundAction]:
         for action in self.ground_actions():
             if action.is_valid(state, self):
-                yield action
-    '''def valid_actions(self, state: State) -> Iterator[GroundAction]:
-        for action in self.__prob_actions:
-            for ground_act in action.get_valid_actions(state):
-                yield ground_act'''
-    '''
-    def valid_actions(self, state: State) -> Iterator[GroundAction]:
-        atom_dict = state.get_atom_dict(self)
-        for action in self.domain.actions:
-            for g_action in action.valid_ground_actions(atom_dict, self):
-                #if g_action.is_valid(state, self):
-                    yield g_action'''
+                yield action'''
 
     def apply_action(self, state: State, action: GroundAction)-> Iterator[State]:
         for positive, negative in action.get_effects(state, self):
             st = state.change_values(positive, negative)
             yield st
+    '''
+    def apply_action(self, atomdict, action: GroundAction)-> Iterator[State]:
+        for positive, negative in action.get_effects(state, self):
+            pos = positive.difference(negate)
+            pos = pos.difference(atomdict)
+            neg = negate.difference(positive)
+            neg = neg.intersection(atomdict)
+            atomdict.join_update(pos)
+            atomdict.difference_update(neg)
+            yield atomdict
+            atomdict.difference_update(pos)
+            atomdict.join_update(neg)'''
 
     def is_goal(self, state: State)->bool:
         return self.goal.evaluate(state, self)
 
-    def get_variable(self, pred_id, var_id):
+    def get_variable(self, pred_id, var_id)->GroundVar:
         return self.var_index[pred_id][var_id]
 
     def print_variable(self, pred_id, var_id):
@@ -287,7 +295,9 @@ class Problem:
                 if any(action in a+b for a, b in constraints):
                     raise ValueError(f'Action {str(action)} already has different fariness type')
             g_actions.append(action)
-        problem_params[PROBLEM_FAIR] = g_actions
+        if PROBLEM_QNP not in problem_params:
+            problem_params[PROBLEM_QNP] = []
+        problem_params[PROBLEM_QNP].append((g_actions, []))
 
     @staticmethod
     def parse_constraint(pddl_tree: PddlTree, domain: Domain, problem_params):

@@ -30,18 +30,43 @@ class IntSet():
     def get_all(self):
         return self.__set
 
+    def get_array(self):
+        return self.__array
+
     def add_set(self, other: IntSet):
         for v in other:
             self.add(v)
 
-    def remove_set(self, other: IntSet):
+    def __len__(self):
+        return len(self.__set)
+
+    def difference_update(self, other: IntSet):
+        '''if len(self) > len(other):
+            for v in other:
+                self.remove(v)
+        else:
+            to_delete = set()
+            for v in self:
+                if other.has(v):
+                    to_delete.add(v)
+            self.__set.difference_update(to_delete)'''
         for v in other:
-            self.remove(v)
+                self.remove(v)
 
     def is_equal(self, other: IntSet):
         if not isinstance(other, IntSet):
             return False
         return self.get_all() == other.get_all()
+
+    def set_values(self, other: IntSet):
+        self.__set = set(other.get_all())
+        self.__array = BitSet.from_bitmask(other.get_array())
+
+    def copy(self):
+        #return IntSet(self.get_all())
+        intset = IntSet([])
+        intset.set_values(self)
+        return intset
 
     def __iter__(self):
         return iter(self.__set)
@@ -60,6 +85,12 @@ class AtomDict:
         '''
         p_id, v_id = atom.get_id()
         self.add_ids(p_id, v_id)
+
+    def set_variables(self, p_id, intset):
+        '''
+        Set the variables corresponding to some predicate id
+        '''
+        self.__sets[p_id] = intset
 
     def add_ids(self, p_id, v_id):
         '''
@@ -85,7 +116,7 @@ class AtomDict:
         '''
         if p_id not in self.__sets:
             return
-        self.__sets[p_id].remove_set(intset)
+        self.__sets[p_id].difference_update(intset)
 
     def get_atoms(self, predicate):
         '''
@@ -161,19 +192,26 @@ class AtomDict:
         return StaticAtomDict(self)
 
     def join(self, other: AtomDict):
-        atoms = copy.deepcopy(self)
+        #atoms = copy.deepcopy(self)
+        atoms = self.copy()
         for p_id, intset in other.iter():
             atoms.add_atoms_ids(p_id, intset)
         return atoms
 
     def difference(self, other: AtomDict):
-        atoms = copy.deepcopy(self)
+        #atoms = copy.deepcopy(self)
+        atoms = self.copy()
         pred_ids = atoms.get_pred_ids()
         for p_id, intset in other.iter():
             if p_id in pred_ids:
                 atoms.remove_atoms_ids(p_id, intset)
         return atoms
 
+    def copy(self):
+        atomdict = AtomDict()
+        for p_id, intset in self.iter():
+            atomdict.set_variables(p_id, intset.copy())
+        return atomdict
 
 class StaticAtomDict():
     def __init__(self, atoms: AtomDict=None):
@@ -215,3 +253,6 @@ class StaticAtomDict():
 
     def __eq__(self, other):
         return self.__atoms.is_equal(other)
+
+    def copy(self):
+        return self.__atoms.copy()

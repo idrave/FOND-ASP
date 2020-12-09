@@ -10,6 +10,7 @@ from fondpddl import Predicate, TypedObject, Argument, ConstType, Constant
 from fondpddl.utils import Index, get_combinations, AtomSet
 from fondpddl.utils.atomdict import AtomDict
 from fondpddl.utils.tokens import PddlIter, PddlTree
+from fondpddl.utils.condition_solve import Conjunction, Disjunction, Negation, VariableSet, AlwaysFalse, AlwaysTrue
 from typing import List
 import fondpddl.effect
 
@@ -23,6 +24,10 @@ class Precondition(ABC):
 
     @abstractmethod
     def evaluate_static(self, state: State, problem: Problem, positive, negative):
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_condition(self, state: State, action, problem: Problem, static=None):
         raise NotImplementedError
 
     @abstractmethod
@@ -82,6 +87,9 @@ class EmptyCondition(Precondition):
     def get_ground_act(self, state: State, problem: Problem):
         return self.__ground_acts
 
+    def get_condition(self, state: State, problem: Problem, static=None):
+        return Conjunction([])
+
     def evaluate(self, state: State, problem: Problem):
         return True
 
@@ -132,6 +140,9 @@ class And(Precondition):
                 return ground_acts
             ground_acts = ground_acts.intersection(condition.get_ground_act(state, problem))
         return ground_acts
+
+    def get_condition(self, state: State, action, problem: Problem, static=None):
+        return Conjunction([condition.get_condition(state, action, problem, static=static) for condition in self.conditions])
 
     def evaluate_static(self, state: State, problem: Problem, positive, negative):
         f = False
@@ -198,6 +209,9 @@ class Not(Precondition):
             res.append(True)
         return tuple(res)
 
+    def get_condition(self, state: State, action, problem: Problem, static=None):
+        return Negation(self.condition.get_condition(state, action, problem, static=static), action, problem)
+
     def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
         for objs, ns in self.condition.make_false(arguments, objects, atoms, neg_vars, problem):
             yield objs, ns
@@ -237,6 +251,9 @@ class Or(Precondition):
         for condition in self.conditions:
             ground_act = ground_act.union(condition.get_ground_act(state, problem))
         return ground_act
+
+    def get_condition(self, state: State, action, problem: Problem, static=None):
+        return Disjunction([condition.get_condition(state, action, problem, static=static) for condition in self.conditions])
 
     def evaluate_static(self, state: State, problem: Problem, positive, negative):
         t = False
@@ -310,6 +327,24 @@ class Variable(Precondition, fondpddl.effect.Effect):
                 ground_acts = ground_acts.union(self.__ground_map.get((pred_id, var_id), set()))
         return ground_acts
 
+    def get_condition(self, state: State, action, problem: Problem, static=None):
+        if static != None:
+            raise NotImplementedError #TODO
+            pos, neg = static
+            if self.predicate not in pos and self.predicate not in neg:
+                return VariableSet(action, self, state, problem)
+            else:
+                return Conjunction([])
+        if all(c.is_ground() for c in self.constants):
+            if self.evaluate(state, problem):
+                return AlwaysTrue()
+            else:
+                return AlwaysFalse()
+        return VariableSet(action, self, state, problem)
+
+    def get_predicates(self):
+        return {self.predicate}, set()
+
     def ground(self, problem: Problem):
         g = GroundVar(self)
         g.set_id(problem)
@@ -332,9 +367,6 @@ class Variable(Precondition, fondpddl.effect.Effect):
 
     def get_effects(self, state: State, problem: Problem):
         yield AtomSet(positive=[problem.get_variable_index(self)])
-
-    def get_predicates(self):
-        return {self.predicate}, set()
 
     def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
         for values in atoms.get_atoms(self.predicate):
@@ -462,6 +494,14 @@ class ForAll(Precondition):
             self.argument.ground(constant)
             self.condition.add_ground_act(id, problem)
             self.argument.reset()
+
+    def get_condition(self, state: State, action, problem: Problem, static=None):
+        cond = []
+        for constant in problem.get_constants(ctype=self.argument.ctype):
+            self.argument.ground(constant)
+            cond.append(self.condition.get_condition(state, action, problem, static=static))
+            self.argument.reset()
+        return Conjunction(cond)
 
     def get_ground_act(self, state: State, problem: Problem):
         ground_acts = set()

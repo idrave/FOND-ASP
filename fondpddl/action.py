@@ -20,6 +20,42 @@ class Action:
         self.precondition = precondition
         self.effect = effect
 
+    def get_ground(self, state: State, problem: Problem):
+        if len(self.parameters) == 0:
+            if self.precondition.evaluate(state, problem):
+                yield self.ground([])
+            return
+        cond = self.precondition.get_condition(state, self, problem)
+
+        def recursive(pos, bounds, vals):
+            if pos == len(self.parameters):
+                yield vals
+                return
+            consts, b = cond.get(pos, bounds, (vals[-1] if len(vals) else None))
+            if not cond.has(pos):
+                assert consts == None
+                for out in recursive(pos+1, b, vals+[None]):
+                    yield out
+            else:
+                consts = consts if consts is not None else problem.get_constants(self.parameters[pos].ctype)
+                for c in consts:
+                    for out in recursive(pos+1, b, vals+[c]):
+                        yield out
+        
+        for out in recursive(0, None, []):
+            if any(o is None for o in out):
+                for i, o in enumerate(out):
+                    if o is None:
+                        out[i] = problem.get_constants(self.parameters[i].ctype)
+                    else:
+                        out[i] = [problem.get_constant(o)]
+                for comb in get_combinations(out, [], lambda a, b: a+[b]):
+                    yield self.ground(comb)
+            else:
+                constants = list(map(problem.get_constant, out))
+                yield self.ground(constants)
+
+
     def valid_ground_actions(self, atoms, problem: Problem):
         for objects, natoms in self.precondition.possible_grounding(
                                         self.parameters, [None] * len(self.parameters),
@@ -95,38 +131,19 @@ class ProblemAction:
     def __init__(self, action: Action, problem: Problem):
         self.__action = action
         self.__problem = problem
-        #self.__ground = []
         self.__ground = {}
         valid_params = []
-        positive, negative = problem.get_pos_neg_preds()
         for param in self.__action.parameters:
             valid_params.append(self.__problem.get_constants(param.ctype))
         self.__valid_params = valid_params
-        total = 1
-        for p in valid_params:
-            total *= len(p)
-        '''
-        for params in get_combinations(valid_params, [], lambda l,x: l + [x]):
-            ground_act = self.__action.ground(params)
-            assert isinstance(ground_act, GroundAction)
-            for s0 in problem.get_initial_states():
-                if ground_act.is_valid_static(s0, problem, positive, negative):
-                    self.__ground.append(ground_act)
-                    break
-        for i, ground_act in enumerate(self.__ground):
-            ground_act.add_id_to_condition(i, problem)
-        '''
-        for i, params in enumerate(get_combinations(valid_params, [], lambda l,x: l + [x])):
-            ground_act = self.__action.ground(params)
-            assert isinstance(ground_act, GroundAction)
-            ground_act.add_id_to_condition(i, problem)
 
-    def get_valid_actions(self, state: State):
-        for g_id in self.__action.precondition.get_ground_act(state, self.__problem):
-            if g_id not in self.__ground:
-                constants = find_combination(self.__valid_params, g_id)
-                self.__ground[g_id] = self.__action.ground(constants)
-            yield self.__ground[g_id]
+    def get_ground(self, state: State, problem: Problem):
+        for ground_action in self.__action.get_ground(state, problem):
+            g = self.__ground.get(ground_action.get_const_ids(), None)
+            if g == None:
+                self.__ground[ground_action.get_const_ids()] = ground_action
+                g = ground_action
+            yield g
 
 
 class GroundAction:
@@ -134,12 +151,16 @@ class GroundAction:
         self.action = action
         self.constants = constants
         self.__effect = None
+        self.__const_ids = (c.id for c in constants)
         #TODO: should check arity and type here?
 
     def add_id_to_condition(self, id, problem):
         self.ground()
         self.action.precondition.add_ground_act(id, problem)
         self.reset()
+
+    def get_const_ids(self):
+        return self.__const_ids
 
     def ground(self):
         for param, const in zip(self.action.parameters, self.constants):

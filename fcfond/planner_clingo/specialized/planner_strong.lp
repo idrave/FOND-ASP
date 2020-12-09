@@ -10,11 +10,14 @@
 % fair(A):     action A has strong cyclic fairness 
 % con_A(A, I): action A belongs to set of constraints A_I
 % con_B(A, I): action A belongs to set of constraints B_I
+
 #show.
-%#show policy/2.
 #show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS). %only for display purposes
 
+% policy(S, A): the policy applies action A in S
 {policy(State, Action): action(Action)} = 1 :- state(State), reach(State), not goal(State).
+
+%reach/1: state is reachable following the policy
 
 reach(S2) :-
     reach(S1), transition(S1, Action, S2),
@@ -22,24 +25,14 @@ reach(S2) :-
 
 reach(St0) :- initialState(St0).
 
-pathgoal(Goal) :- goal(Goal).
-
-:- reach(State), not pathgoal(State).
-
-pathgoal(State) :-
-    state(State), policy(State, Action), reach(State),
-    transition(State, Action, S2), pathgoal(S2).
-
-%%%% Termination
-
+%edge/2: the policy in s1 chooses an action that can take you to s2
 edge(S1, S2) :- transition(S1, Action, S2), policy(S1, Action), reach(S1), not goal(S1).
+
+% def 15: rule 1
 terminating(G) :- goal(G).
 
-% check all successors are terminating
-terminating(S) :-
-    policy(S, A),
-    terminating(S, S2) : edge(S, S2).
+% def 15: rule 3
+terminating(S) :- reach(S), edge(S, _), terminating(T): edge(S, T).
 
-terminating(S1, S2) :- terminating(S2), edge(S1, S2).
-
+% all states should terminate from goal
 :-  not terminating(S), reach(S).

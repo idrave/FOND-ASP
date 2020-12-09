@@ -40,7 +40,7 @@ def get_experiments():
         add_pddl_experiment(nested, 'nested%s'%(si), 'nested%s'%(si),
                         QNP_DOM_PATHS/'nested'/('domain%s.pddl'%(si)), QNP_DOM_PATHS/'nested'/('problem%s.pddl'%(si)),
                         DEFAULT_OUT_QNP/'nested'/('p%s'%(si)), QNPPlanner)
-    add_experiment_list(nested, 'nested', 'nested', list(sequential.keys()), DEFAULT_OUT_QNP/'nested'/'all')
+    add_experiment_list(nested, 'nested', 'nested', list(nested.keys()), DEFAULT_OUT_QNP/'nested'/'all')
 
     experiments = {}
     experiments.update(base_qnp)

@@ -38,44 +38,44 @@ class DualFondQnpPlanner(Planner):
             logdict[PREPROCESS] = time.time() - start
         return symbols
 
-    def solve(self, domain, k=None, n=1, threads=1, **kwargs):
+    def solve(self, domain, timelimit, memlimit, k=None, n=1, threads=1, **kwargs):
         k = k if k != None else 3
         args = ['clingo', DualFondQnpPlanner.FILE, domain, '-c', f'k={k}', '-n', str(n), '-t', str(threads)]
         print(args)
-        return run_profile(args)
+        return run_profile(args, time_limit=timelimit, memory_limit=memlimit)
 
 class FairnessNoIndex(DualFondQnpPlanner):
-    FILE = Path(__file__).parent/'planner_clingo'/'planner_noindex_2.lp'
-    def solve(self, domain, n=1, threads=1, **kwargs):
+    FILE = Path(__file__).parent/'planner_clingo'/'planner_fondp2.lp'
+    def solve(self, domain, timelimit, memlimit, n=1, threads=1, **kwargs):
         args = ['clingo', FairnessNoIndex.FILE, domain, '-n', str(n), '-t', str(threads)]
         print(args)
-        return run_profile(args)
+        return run_profile(args, time_limit=timelimit, memory_limit=memlimit)
 
 class QNPPlanner(FairnessNoIndex):
     #FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_qnp.lp'
-    FILE = Path(__file__).parent/'planner_clingo'/'planner_fondp.lp'
-    def solve(self, domain, n=1, threads=1, **kwargs):
+    FILE = Path(__file__).parent/'planner_clingo'/'planner_fondp2.lp'
+    def solve(self, domain, timelimit, memlimit, n=1, threads=1, **kwargs):
         args = ['clingo', QNPPlanner.FILE, domain, '-n', str(n), '-t', str(threads)]
         print(args)
-        return run_profile(args)
+        return run_profile(args, time_limit=timelimit, memory_limit=memlimit)
 
 class DualFONDPlanner:
     FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_noindex_dual.lp'
-    def solve(self, domain, n=1, threads=1, **kwargs):
+    def solve(self, domain, timelimit, memlimit, n=1, threads=1, **kwargs):
         args = ['clingo', DualFONDPlanner.FILE, domain, '-n', str(n), '-t', str(threads)]
         print(args)
-        return run_profile(args)
+        return run_profile(args, time_limit=timelimit, memory_limit=memlimit)
 
 class StrongPlanner:
     FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_strong.lp'
-    def solve(self, domain, n=1, threads=1, **kwargs):
+    def solve(self, domain, timelimit, memlimit, n=1, threads=1, **kwargs):
         args = ['clingo', StrongPlanner.FILE, domain, '-n', str(n), '-t', str(threads)]
         print(args)
-        return run_profile(args)
+        return run_profile(args, time_limit=timelimit, memory_limit=memlimit)
 
 class StrongCyclicPlanner:
     FILE = Path(__file__).parent/'planner_clingo'/'specialized'/'planner_strongcyclic.lp'
-    def solve(self, domain, n=1, threads=1, **kwargs):
+    def solve(self, domain, timelimit, memlimit, n=1, threads=1, **kwargs):
         args = ['clingo', StrongCyclicPlanner.FILE, domain, '-n', str(n), '-t', str(threads)]
         print(args)
-        return run_profile(args)
+        return run_profile(args, time_limit=timelimit, memory_limit=memlimit)

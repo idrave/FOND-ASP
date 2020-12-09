@@ -1,4 +1,5 @@
 from fondpddl.utils import StaticBitSet
+from fondpddl.utils.atomdict import StaticAtomDict
 from fondpddl import Problem, State
 from fondpddl.algorithm import GraphIterator
 from typing import Iterator
@@ -23,13 +24,15 @@ class BreadthFirstSearch(GraphIterator):
                 state.set_transitions(successors)
                 yield state
                 continue
+            #atoms = state.atoms.copy()
             for action in problem.valid_actions(state):
                 children = []
                 for new_state in problem.apply_action(state, action):
                     #print('STATE', new_state.string(problem))
-                    new_state.string(problem)
+                    #child = visited.get(State.open_state(StaticAtomDict(new_atoms)), None)
                     child = visited.get(new_state, None)
                     if child == None:   # new state
+                        #child = State.open_state(StaticAtomDict(new_atoms.copy()))
                         child = new_state
                         child.set_init(False)
                         visited[child] = child

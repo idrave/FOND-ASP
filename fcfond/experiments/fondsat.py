@@ -24,10 +24,10 @@ def get_fond_sat_experiments(name, nums, strong):
             prob_name = name + '_' + prob
             add_pddl_experiment(strong_exp, prob_name+'_strong', prob_name+'_strong', domain_path,
                                 strong_problem_path/(prob+'.pddl'), strong_out/prob,
-                                StrongPlanner)
+                                StrongPlanner, expgoal=False)
             add_pddl_experiment(cyclic_exp, prob_name+'_cyclic', prob_name+'_cyclic', domain_path,
                                 cyclic_problem_path/(prob+'.pddl'), cyclic_out/prob,
-                                StrongCyclicPlanner)
+                                StrongCyclicPlanner, expgoal=False)
         strong_list = name + '_l' + str(i) + '_strong'
         cyclic_list = name + '_l' + str(i) + '_cyclic'
         add_experiment_list(strong_exp, strong_list, strong_list,

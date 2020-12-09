@@ -3,18 +3,16 @@
 % goal(S): S is a goal state
 % action(A): A is an action
 % transition(S1, A, S2): S2 belongs to F(S1, A) (F being the transition function)
-% policy(S, A): the policy applies action A in S
-% reach(S): state S is reachable from initial state following the policy
-% pathgoal(S): there exists a path from S to a goal state, following the policy
-% edge(S1, S2): (S1, S2) is a valid transition from S1, following the policy
-% fair(A):     action A has strong cyclic fairness 
 % con_A(A, I): action A belongs to set of constraints A_I
 % con_B(A, I): action A belongs to set of constraints B_I
 
 #show.
 #show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS). %only for display purposes
 
+% policy(S, A): the policy applies action A in S
 {policy(State, Action): action(Action)} = 1 :- state(State), reach(State), not goal(State).
+
+%reach/1: state is reachable following the policy
 
 reach(S2) :-
     reach(S1), transition(S1, Action, S2),
@@ -22,12 +20,16 @@ reach(S2) :-
 
 reach(St0) :- initialState(St0).
 
+%edge/2: the policy in s1 chooses an action that can take you to s2
 edge(S1, S2) :- transition(S1, Action, S2), policy(S1, Action), reach(S1), not goal(S1).
 
+%connected/2: there exists a path from s1 to s2 following the policy
 connected(S1, S2) :- edge(S1, S2).
 connected(S1, S3) :- connected(S1, S2), edge(S2, S3), S1 != S2.
 
-% check whether all paths from S1 to S2 have terminating edges
+%nopath/2: expresses that:
+% i) there is no path from s1 to s2, or
+% ii) all paths from s1 to s2 contain a state that has been marked as terminating
 nopath(S1, S2) :- reach(S1), reach(S2), not connected(S1, S2).
 nopath(S1, S2) :- connected(S1, S2), terminating(S1).
 nopath(S1, S2) :- connected(S1, S2), terminating(S2).
@@ -35,22 +37,21 @@ nopath(S1, S2) :-
     connected(S1, S2),
     nopath(T, S2) : edge(S1, T), connected(T, S2).
 
+% fair/1: uses above symbols to express that the policy applies action from A_j in state s,
+% and there is a terminating state in all paths from s to itself passing through
+% a state that applies an action in B_j
+fair(S) :-
+    policy(S, Act), con_A(Act, J),
+    nopath(T, S) : reach(T), policy(T, Act2), con_B(Act2, J), not nopath(S, T).
+
+% def 15: rule 1
 terminating(G) :- goal(G).
 
-terminating(S) :- reach(S), edge(S, T), terminating(T), nopath(S, S).
+% def 15: rule 2
+terminating(S) :- reach(S), fair(S), edge(S, T), terminating(T).
 
-% qnp like termination
-terminating(S) :-
-    policy(S, Act), con_A(Act, J), edge(S, T), terminating(T),
-    nopath_con(S, U, J): differ(S, U, J).
+% def 15: rule 3
+terminating(S) :- reach(S), not fair(S), edge(S, _), terminating(T): edge(S, T).
 
-% mark pairs of edges that decrease/decrease a variable respectively
-differ(S, T, J) :-
-    policy(S, A1), con_A(A1, J),
-    policy(T, A2), con_B(A2, J).
-
-%no path increasing variable that is decreased
-nopath_con(S, T, J) :- differ(S, T, J), nopath(S, T).
-nopath_con(S, T, J) :- differ(S, T, J), nopath(T, S).
-
+% all states should terminate from goal
 :-  not terminating(S), reach(S).

@@ -6,7 +6,7 @@ from fcfond.experiments.names import *
 import numpy as np
 
 def add_pddl_experiment(experiments, name, key, domain,
-                        problem, output, planner, callback=None):
+                        problem, output, planner, expgoal=True, callback=None):
     experiments[key] = {
         GRAPH_ITER : BreadthFirstSearch,
         PROB_NAME : name,
@@ -15,6 +15,7 @@ def add_pddl_experiment(experiments, name, key, domain,
         PDDL_PROBLEM : problem,
         OUTPUT : output,
         PLANNER : planner,
+        EXPGOAL:expgoal,
         CALLBACK: callback
     }
 

@@ -40,8 +40,10 @@ class BitSet(BitMask):
 
     @classmethod
     def from_bitmask(cls, bitmask: BitMask) -> BitSet:
-        bs = cls(length=len(bitmask))
+        #bs = cls(length=len(bitmask))
+        bs = cls()
         bs.bits = bytearray(bitmask.bits)
+        bs.length = bitmask.length
         return bs
 
     def resize(self, length):
@@ -78,6 +80,9 @@ class StaticBitSet(BitMask):
                 break
         bits = bits[:last]
         super().__init__(bits)
+
+    def copy(self):
+        return StaticBitSet(self)
 
     def __hash__(self):
         return hash(bytes(self.bits))

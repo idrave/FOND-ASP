@@ -20,6 +20,9 @@ def get_experiments():
     add_pddl_experiment(experiments, 'foot3x2', 'foot3x2', PDDL_DOM_PATHS/'foot3x2_d.pddl',
                         PDDL_DOM_PATHS/'foot3x2_p.pddl', DEFAULT_OUT/'foot3x2',
                         FairnessNoIndex)
+    add_pddl_experiment(experiments, 'foot3x2_unfair_01', 'foot3x2_unfair_01', PDDL_DOM_PATHS/'foot3x2_d.pddl',
+                        PDDL_DOM_PATHS/'foot3x2_unfair_01.pddl', DEFAULT_OUT/'foot3x2_unfair_01',
+                        FairnessNoIndex)
     add_pddl_experiment(experiments, 'football_5', 'football_5', PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
                         PDDL_DOM_PATHS/'football'/'football_5.pddl', DEFAULT_OUT/'football_5',
                         FairnessNoIndex)

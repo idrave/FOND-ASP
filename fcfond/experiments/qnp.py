@@ -26,6 +26,27 @@ def get_experiments():
 
     add_experiment_list(base_qnp, 'qnp', 'qnp', list(base_qnp.keys()), DEFAULT_OUT_QNP/'all')
 
+    unfair_qnp = {}
+
+    add_pddl_experiment(unfair_qnp, 'clear_unfair_01', 'clear_unfair_01',
+                            QNP_DOM_PATHS/'clear_d.pddl', QNP_DOM_PATHS/'clear_unfair_01.pddl',
+                            DEFAULT_OUT_QNP/'clear_unfair_01', QNPPlanner)
+
+    add_pddl_experiment(unfair_qnp, 'on_unfair_01', 'on_unfair_01',
+                        QNP_DOM_PATHS/'on_d.pddl', QNP_DOM_PATHS/'on_unfair_01.pddl',
+                        DEFAULT_OUT_QNP/'on_unfair_01', QNPPlanner)
+
+    add_pddl_experiment(unfair_qnp, 'gripper_unfair_01', 'gripper_unfair_01',
+                        QNP_DOM_PATHS/'gripper_d.pddl', QNP_DOM_PATHS/'gripper_unfair_01.pddl',
+                        DEFAULT_OUT_QNP/'gripper_unfair_01', QNPPlanner)
+
+    add_pddl_experiment(unfair_qnp, 'delivery_unfair_01', 'delivery_unfair_01',
+                            QNP_DOM_PATHS/'delivery_d.pddl', QNP_DOM_PATHS/'delivery_unfair_01.pddl',
+                            DEFAULT_OUT_QNP/'delivery_unfair_01', QNPPlanner)
+
+    add_experiment_list(unfair_qnp, 'unfair_qnp', 'unfair_qnp', list(unfair_qnp.keys()),
+                            DEFAULT_OUT_QNP/'unfair')
+
     sequential = {}
     for i in range(2, 11):
         si = str(i).zfill(2)
@@ -46,5 +67,6 @@ def get_experiments():
     experiments.update(base_qnp)
     experiments.update(sequential)
     experiments.update(nested)
+    experiments.update(unfair_qnp)
 
     return experiments

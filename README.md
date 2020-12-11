@@ -12,18 +12,19 @@ To run the system, you will need to have Clingo installed. In [Potassco](https:/
 conda install -c potassco clingo
 ```
 
-Independently of the setup method used, you should be able to run
+Independently of the setup method used, you should be able to run from command line:
 ```bash
 clingo -h
 ```
-from command line to run the planner.
 
-You will need to do a minimal setup running, which you might want to do in an independent python environment:
+Having clingo installed, you will need to run:
 ```bash
+git clone https://github.com/idrave/aspplanner.git
+cd aspplanner
 pip install -r requirements.txt
 pip install -e .
 ```
-from the directory in which you have cloned the repo.
+You might want to apply the above steps inside an independent python environment.
 
 ## Running the planner
 
@@ -32,14 +33,30 @@ After setting up requirements, you can run experiments using the ASP FOND+ plann
 python -m fcfond.main [EXPERIMENTS] -out OUTPUT
 ```
 
-Where <code>EXPERIMENTS</code> is one or more available experiments for the planner and <code>OUTPUT</code> is an output directory. Some possible values for this argument are:
+Where <code>EXPERIMENTS</code> is one or more available experiments for the planner. Some available experiments and sub-experiments (which can also be run independently)
 - qnp
+    - clear_qnp
+    - on_qnp
+    - gripper_qnp
+    - delivery_qnp
 - ltl
+    - list
+    - double-list
+    - tree
+    - graph
+    - minlist
+    - member-tree
+    - swamp
 - foot3x2
 - sequential
+    - sequentialXX, for XX from 02 to 10
 - nested
+    - nestedXX, for XX from 02 to 10
+
+TODO: display above info from command line option
+
 The output will include:
-- stdout.txt: file containing the standard output given by Clingo solver when run over the domains. This shows the resulting policy, among other types of information
+- stdout.txt: file containing the standard output given by Clingo solver when run over the domains. This shows the resulting policy, among other types of information.
 - metrics.csv: contains a summary of several performance metrics
 - Output .lp files with Clingo symbols corresponding to the input domains
 The planner can also be run over any input pddl files using:
@@ -47,6 +64,7 @@ The planner can also be run over any input pddl files using:
 python -m fcfond.main -pddl [DOMAIN PROBLEM]
 ```
 Passing as argument a sequence of domain and problem .pddl files.
+
 If you wish to test your own variation of the ASP encoding, you can do it using:
 ```bash
 python -m fcfond.main [EXPERIMENTS] -planner [PLANNER]

@@ -95,14 +95,12 @@ def run_experiment(name, experiments, output, timelimit,
 
     planner = planner if planner != None else experiment[PLANNER].FILE
     if experiment[ENCODING] == CLINGO:
-        print(planner)
         results = solve_clingo(
                     experiment[PROB_NAME], experiment[CLINGO_PROBLEM],
                     planner, output, timelimit, memlimit,
-                    pre_process=True, k=k, n=n, threads=threads) #TODO preprocess can be changed
+                    k=k, n=n, threads=threads)
     else:
         assert experiment[ENCODING] == PDDL
-        print(planner)
         results = solve_pddl(
                     experiment[PROB_NAME], experiment[PDDL_DOMAIN],
                     experiment[PDDL_PROBLEM], planner, output,

@@ -1,5 +1,6 @@
 from fcfond.profile import run_profile, parse_clingo_out, MAXMEM, MEMORY
 from fcfond.planner import DualFondQnpPlanner
+from fondpddl.algorithm import BreadthFirstSearch
 from fondpddl import encode_clingo_problem
 from fcfond.planner import Planner
 import argparse
@@ -51,9 +52,36 @@ def solve_pddl(name, domain_file, problem_file, planner: Planner,
     logs[STDOUT] = output
     return logs
 
+def run_pddl(pddl_files, timeout, memout, output, log=False, n=1, planner=None,
+                    expgoal=False, k=None, threads=1):
+    
+    out_path = Path(output)
+    if not out_path.is_dir():
+        out_path.mkdir(parents=True)
+    results = []
+    for domain, problem in pddl_files:
+        res = solve_pddl(Path(problem).stem, domain, problem, planner, output,
+                         BreadthFirstSearch(), timeout, memout, log=log,
+                         n=n, expgoal=expgoal, k=k, threads=threads)
+        format_results(res)
+        results.append(res)
+
+    stdout = ''
+    for result in results:
+        stdout += result[PROBLEM]+'\n'
+        stdout += result[STDOUT]+'\n'
+    if log:
+        print(stdout)
+    df = pd.DataFrame(results).drop(STDOUT, axis=1)
+    df.to_csv(str(Path(output)/'metrics.csv'),index=False)
+
+    if log:
+        print(df)
+    with open(str(Path(output)/'stdout.txt'), 'w') as fp:
+        fp.write(stdout)
+
 def solve_clingo(name, domain_file, planner: Planner, output_dir,
                  timelimit, memlimit, pre_process=False, **kwargs):
-
     logs = {PROBLEM: name}
     if pre_process:
         symbols = planner.relevant_symbols(domain_file, logdict=logs) #TODO change this (?)
@@ -65,10 +93,38 @@ def solve_clingo(name, domain_file, planner: Planner, output_dir,
         print('Preprocessing done')
     else:
         logs[PREPROCESS] = 0
-    output, profile = planner.solve(domain_file, **kwargs)
+    output, profile = planner.solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
     logs[STDOUT] = output
     return logs
+
+def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=False,
+                n=1, planner=None, k=None, threads=1):
+    
+    out_path = Path(output)
+    if not out_path.is_dir():
+        out_path.mkdir(parents=True)
+    results = []
+    for problem in clingo_files:
+        res = solve_clingo(Path(problem).stem, problem, planner, output,
+                         timeout, memout, log=log,
+                         n=n, k=k, threads=threads)
+        format_results(res)
+        results.append(res)
+
+    stdout = ''
+    for result in results:
+        stdout += result[PROBLEM]+'\n'
+        stdout += result[STDOUT]+'\n'
+    if log:
+        print(stdout)
+    df = pd.DataFrame(results).drop(STDOUT, axis=1)
+    df.to_csv(str(Path(output)/'metrics.csv'),index=False)
+
+    if log:
+        print(df)
+    with open(str(Path(output)/'stdout.txt'), 'w') as fp:
+        fp.write(stdout)
 
 def format_results(results):
     for key, value in results.items():

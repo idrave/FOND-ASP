@@ -5,14 +5,14 @@
 
     (:goal (and (not (carry-gr0)) (not (balls-gr0))))
 
-    ;(:constraint
+    ;(:fairness
     ;    :a (pick-at-source)
     ;    :b (drop-at-source))
 
-    (:constraint
+    (:fairness
         :a (drop-at-source) (drop-at-target)
         :b (pick-at-source))
 
-    (:constraint
+    (:fairness
         :a (pick-at-source)
         :b (drop-at-source) (drop-at-target)))

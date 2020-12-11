@@ -8,5 +8,5 @@
         (p))
 
     (:goal (not(gr0 v2)))
-    (:constraint :a (a v0 v1))
-    (:constraint :a (a v1 v2)))
+    (:fairness :a (a v0 v1))
+    (:fairness :a (a v1 v2)))

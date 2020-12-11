@@ -4,8 +4,8 @@
 
     (:goal (not (dist-gr0)))
 
-    ;(:fair (go-up center) (go-up down) (go-down up) (go-down center))
+    ;(:fairness :a (go-up center) (go-up down) (go-down up) (go-down center))
 
-    (:constraint
+    (:fairness
         :a (go-right up) (go-right center) (go-right down)
         :b (go-left up) (go-left center) (go-left down)))

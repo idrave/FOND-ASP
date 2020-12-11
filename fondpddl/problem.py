@@ -13,18 +13,17 @@ PROBLEM_NAME = 'name'
 PROBLEM_OBJ = 'objects'
 PROBLEM_INIT = 'init'
 PROBLEM_GOAL = 'goal'
-PROBLEM_FAIR = 'fair'
-PROBLEM_QNP = 'constraint'
+PROBLEM_FAIR = 'fairness'
 
 class Problem:
     def __init__(self, name: str, domain: Domain, objects: List[Constant],
-                 init: List[Init], goal: Precondition, fair, constraints):
+                 init: List[Init], goal: Precondition, constraints):
         self.name = name
         self.domain = domain
         self.objects = objects
         self.init = init
         self.goal = goal
-        self.set_fairness(fair, constraints)
+        self.set_fairness(constraints)
 
         self.var_index = {pred.get_id(): Index() for pred in self.domain.predicates}
         if domain.is_typed():
@@ -33,19 +32,10 @@ class Problem:
                 if const.ctype not in self.by_type:
                     raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
                 self.by_type[const.ctype].append(const)
-
-        '''self.__positive = set()
-        self.__negative = set()
-        for action in self.domain.actions:
-            pos, neg = action.effect.get_predicates()
-            self.__positive.update(pos)
-            self.__negative.update(neg)'''
         
         self.__prob_actions = [ProblemAction(action, self) for action in self.domain.actions]
 
-    def set_fairness(self, fair: List[GroundAction],
-                     constraints: List[Tuple[List[GroundAction], List[GroundAction]]]):
-        self.fair = set(fair)
+    def set_fairness(self, constraints: List[Tuple[List[GroundAction], List[GroundAction]]]):
         self.constraints = constraints
         self.__const_map = {}
         for i, (const_a, const_b) in enumerate(self.constraints):
@@ -58,10 +48,7 @@ class Problem:
                     self.__const_map[action] = ([],[])
                 self.__const_map[action][1].append(i)
 
-    def is_strong_cyclic(self, action: GroundAction):
-        return action in self.fair
-
-    def get_qnp_constraints(self, action: GroundAction):
+    def get_fair_constraints(self, action: GroundAction):
         return self.__const_map.get(action, ([], [])) #TODO check if valid action
 
     def get_constants(self, ctype: ConstType=None) -> List[Constant]:
@@ -118,11 +105,6 @@ class Problem:
         for action in self.__prob_actions:
             for gaction in action.get_ground(state, self):
                 yield gaction
-    '''
-    def valid_actions(self, state: State) -> Iterator[GroundAction]:
-        for action in self.ground_actions():
-            if action.is_valid(state, self):
-                yield action'''
 
     def apply_action(self, state: State, action: GroundAction)-> Iterator[State]:
         for positive, negative in action.get_effects(state, self):
@@ -153,7 +135,7 @@ class Problem:
     def str_constraints(self):
         constraints = []
         for con_a, con_b in self.constraints:
-            constraints.append('(CONSTRAINT\n\t' + ' '.join(map(str, con_a))+ ',\n\t' + \
+            constraints.append('(FAIRNESS\n\t' + ' '.join(map(str, con_a))+ ',\n\t' + \
                                 ' '.join(map(str, con_b)) + ')')
         return '\n'.join(constraints)
 
@@ -162,7 +144,6 @@ class Problem:
             'OBJECTS ' + ' '.join(map(str, self.objects))+'\n' + \
             'INIT (' + ' '.join(map(str, self.init)) + ')\n' + \
             'GOAL (' + str(self.goal) + ')\n' + \
-            'FAIR (' + ' '.join(map(str, self.fair)) + ')\n' + \
             self.str_constraints() + ')\n'
 
     @staticmethod
@@ -171,8 +152,7 @@ class Problem:
             ':objects' : Problem.parse_objects,
             ':init' : Problem.parse_init,
             ':goal' : Problem.parse_goal,
-            ':fair' : Problem.parse_fair,
-            ':constraint' : Problem.parse_constraint
+            ':fairness' : Problem.parse_constraint
         }
         first_token = pddl_tree.iter_elements().get_next()
         if first_token not in methods:
@@ -206,8 +186,7 @@ class Problem:
             problem_params.get(PROBLEM_OBJ, []),
             problem_params.get(PROBLEM_INIT, EmptyEffect()),
             problem_params.get(PROBLEM_GOAL, EmptyCondition()),
-            problem_params.get(PROBLEM_FAIR, []),
-            problem_params.get(PROBLEM_QNP, [])
+            problem_params.get(PROBLEM_FAIR, [])
         )
 
     @staticmethod
@@ -279,7 +258,7 @@ class Problem:
         pddl_iter.assert_end()
         problem_params[PROBLEM_GOAL] = goal
 
-    @staticmethod
+    '''@staticmethod
     def parse_fair(pddl_tree: PddlTree, domain: Domain, problem_params):
         if PROBLEM_FAIR in problem_params:
             raise ValueError('Redefinition of fair action set')
@@ -290,19 +269,19 @@ class Problem:
         objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
         while pddl_iter.has_next():
             action = GroundAction.parse(pddl_iter.get_group(), actions, objects)
-            if PROBLEM_QNP in problem_params:
-                constraints = problem_params[PROBLEM_QNP]
+            if PROBLEM_FAIR in problem_params:
+                constraints = problem_params[PROBLEM_FAIR]
                 if any(action in a+b for a, b in constraints):
                     raise ValueError(f'Action {str(action)} already has different fariness type')
             g_actions.append(action)
-        if PROBLEM_QNP not in problem_params:
-            problem_params[PROBLEM_QNP] = []
-        problem_params[PROBLEM_QNP].append((g_actions, []))
+        if PROBLEM_FAIR not in problem_params:
+            problem_params[PROBLEM_FAIR] = []
+        problem_params[PROBLEM_FAIR].append((g_actions, []))'''
 
     @staticmethod
     def parse_constraint(pddl_tree: PddlTree, domain: Domain, problem_params):
         pddl_iter = pddl_tree.iter_elements()
-        pddl_iter.assert_token(':constraint')
+        pddl_iter.assert_token(':fairness')
         actions = domain.actions
         objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
         a = None
@@ -328,8 +307,8 @@ class Problem:
                     if action in problem_params[PROBLEM_FAIR]:
                         raise ValueError(f'Action {str(action)} already has different fariness type')
                 act_list.append(action)
-        if PROBLEM_QNP not in problem_params:
-            problem_params[PROBLEM_QNP] = []
-        problem_params[PROBLEM_QNP].append((a if a != None else [], b if b != None else []))
+        if PROBLEM_FAIR not in problem_params:
+            problem_params[PROBLEM_FAIR] = []
+        problem_params[PROBLEM_FAIR].append((a if a != None else [], b if b != None else []))
 
     

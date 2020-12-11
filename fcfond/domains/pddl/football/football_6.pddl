@@ -5,7 +5,7 @@
 
     (:goal (not (dist-gr0)))
 
-    (:fair (go-up down p6 p5)
+    (:fairness :a (go-up down p6 p5)
            (go-up p6 p5 p4)
            (go-up p5 p4 p3)
            (go-up p4 p3 p2)
@@ -18,6 +18,6 @@
            (go-down p4 p5 p6)
            (go-down p5 p6 down))
 
-    (:constraint
+    (:fairness
         :a (go-right p1) (go-right p2) (go-right p3) (go-right p4) (go-right p5) (go-right p6)
         :b (go-left p1) (go-left p2) (go-left p3) (go-left p4) (go-left p5) (go-left p6)))

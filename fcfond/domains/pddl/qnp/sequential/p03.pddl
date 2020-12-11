@@ -10,6 +10,6 @@
         (p))
 
     (:goal (not (gr0 v3)))
-    (:constraint :a (a v0 v1))
-    (:constraint :a (a v1 v2))
-    (:constraint :a (a v2 v3)))
+    (:fairness :a (a v0 v1))
+    (:fairness :a (a v1 v2))
+    (:fairness :a (a v2 v3)))

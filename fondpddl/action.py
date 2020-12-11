@@ -221,14 +221,11 @@ class GroundAction:
         symbols = []
         index = action_index.get_index(self)
         symbols.append(clingo.Function('action', [index]))
-        if problem.is_strong_cyclic(self):
-            symbols.append(clingo.Function('fair', [index]))
-        else:
-            const_a, const_b = problem.get_qnp_constraints(self)
-            for constraint in const_a:
-                symbols.append(clingo.Function('con_A', [index, constraint]))
-            for constraint in const_b:
-                symbols.append(clingo.Function('con_B', [index, constraint]))
+        const_a, const_b = problem.get_fair_constraints(self)
+        for constraint in const_a:
+            symbols.append(clingo.Function('con_A', [index, constraint]))
+        for constraint in const_b:
+            symbols.append(clingo.Function('con_B', [index, constraint]))
         return symbols
 
     def id_clingo(self, action_index):

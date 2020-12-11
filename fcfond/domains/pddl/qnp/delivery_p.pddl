@@ -5,13 +5,13 @@
 
     (:goal (and (not (holding)) (not (pack-gr0))))
 
-    (:constraint
+    (:fairness
         :a (move)
         :b (home) (deliver))
 
-    (:constraint
+    (:fairness
         :a (home)
         :b (move))
 
-    (:constraint
+    (:fairness
         :a (deliver)))

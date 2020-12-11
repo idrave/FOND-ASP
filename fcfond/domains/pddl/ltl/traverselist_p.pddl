@@ -2,4 +2,4 @@
 
     (:init (has-next))
     (:goal (not (has-next)))
-    (:fair (next)))
+    (:fairness :a (next)))

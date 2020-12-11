@@ -17,7 +17,7 @@ for i in range(2, 11):
     problem_str += '\t(:init%s (p))\n' % (''.join(' (gr0_%d)' % (j) for j in range(1, i+1)))
     problem_str += '\t(:goal (not (gr0_%d)))' % (i)
     for j in range(1, i+1):
-        problem_str += '\n\t(:constraint :a (a%d)' % (j)
+        problem_str += '\n\t(:fairness :a (a%d)' % (j)
         if j < i:
             problem_str += ' :b%s' % (''.join(' (a%d)' % (k) for k in range(j+1,i+1)))
         problem_str += ')'

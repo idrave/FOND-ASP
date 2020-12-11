@@ -3,12 +3,9 @@
            (n-gr0)
            (m-gr0))
     (:goal (goal)) 
-    (:constraint
+    (:fairness
         :a (pick-above-x))
-    ;(:constraint
+    ;(:fairness
     ;    :a (pick-above-y)
     ;    :b (put-x-on-y))
     )
-
-; constraints ((pick-above-y), ())
-; constraints ((put-x-on-y), ())

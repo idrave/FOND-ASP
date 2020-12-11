@@ -41,6 +41,6 @@
         :precondition (and (not (agent-turn)) (defender ?pos1) (dec ?pos0 ?pos1) (dec ?pos1 ?pos2))
         :effect (and (not (defender ?pos1))
                      (when (dec up ?pos1) (oneof (defender ?pos1) (defender ?pos2)))
-                     (when (not (or (dec up ?pos1) (dec ?pos1 down))) (oneof (defender ?pos0) (defender ?pos1) (defender ?pos2)))
+                     (when (and (not (dec up ?pos1)) (not (dec ?pos1 down))) (oneof (defender ?pos0) (defender ?pos1) (defender ?pos2)))
                      (when (dec ?pos1 down) (oneof (defender ?pos1) (defender ?pos0)))
                      (agent-turn))))

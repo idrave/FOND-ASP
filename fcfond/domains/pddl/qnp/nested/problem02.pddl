@@ -1,5 +1,5 @@
 (define (problem nestedqnp02) (:domain nestedqnp02)
 	(:init (gr0_1) (gr0_2) (p))
 	(:goal (not (gr0_2)))
-	(:constraint :a (a1) :b (a2))
-	(:constraint :a (a2)))
+	(:fairness :a (a1) :b (a2))
+	(:fairness :a (a2)))

@@ -59,6 +59,7 @@ The output will include:
 - stdout.txt: file containing the standard output given by Clingo solver when run over the domains. This shows the resulting policy, among other types of information.
 - metrics.csv: contains a summary of several performance metrics
 - Output .lp files with Clingo symbols corresponding to the input domains
+
 The planner can also be run over any input pddl files using:
 ```bash
 python -m fcfond.main -pddl [DOMAIN PROBLEM]

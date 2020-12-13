@@ -68,5 +68,9 @@ def get_experiments():
     experiments.update(sequential)
     experiments.update(nested)
     experiments.update(unfair_qnp)
+    add_clingo_experiment(experiments, 'nested08_clingo', 'nested08_clingo', CLINGO_DOM_PATHS/'qnp'/'nested'/'nested08.lp',DEFAULT_OUT_QNP/'nested'/'p08_clingo', QNPPlanner)
+    add_experiment_list(experiments, 'nested08_clingo_10reps', 'nested08_clingo_10reps', ['nested08_clingo']*10, DEFAULT_OUT_QNP/'nested'/'p08_clingo_10reps',callback=avg_results)
+    add_clingo_experiment(experiments, 'nested08_simple_clingo', 'nested08_simple_clingo', CLINGO_DOM_PATHS/'qnp'/'nested'/'nested08_simple.lp',DEFAULT_OUT_QNP/'nested'/'p08_simple_clingo', QNPPlanner)
+    add_experiment_list(experiments, 'nested08_simple_clingo_10reps', 'nested08_simple_clingo_10reps', ['nested08_simple_clingo']*10, DEFAULT_OUT_QNP/'nested'/'p08_simple_clingo_10reps',callback=avg_results)
 
     return experiments

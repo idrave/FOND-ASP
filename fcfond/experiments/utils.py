@@ -63,6 +63,8 @@ def avg_results(experiment, results):
             raise ValueError(f'Unexpected result {exp[RESULT]}')
 
     def avg_key(key, l, round_=0):
+        if key not in exp:
+            return None
         r = round(np.mean([exp[key] for exp in l]), round_)
         if round_ == 0:
             return int(r)

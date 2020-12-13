@@ -93,7 +93,7 @@ def solve_clingo(name, domain_file, planner: Planner, output_dir,
         print('Preprocessing done')
     else:
         logs[PREPROCESS] = 0
-    output, profile = planner.solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
+    output, profile = DualFondQnpPlanner().solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
     logs[STDOUT] = output
     return logs

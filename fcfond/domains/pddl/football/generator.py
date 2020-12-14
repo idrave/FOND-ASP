@@ -9,7 +9,7 @@ for i in range(3, 11):
     problem_str += '\t(:goal (not (dist-gr0)))\n'
     problem_str += '\t(:fairness\n\t\t:a (go-up down p%d p%d) (go-down p%d p%d down)\n\t\t(go-up p%d p%d up) (go-down up p%d p%d)' % (i,i-1,i-1,i,2,1,1,2)
     for j in range(1, i-1):
-        problem_str += '\n\t\t(go-up p%d p%d p%d) (go-down p%d p%d p%d)' % (j,j+1,j+2,j+2,j+1,j)
+        problem_str += '\n\t\t(go-up p%d p%d p%d) (go-down p%d p%d p%d)' % (j+2,j+1,j,j,j+1,j+2)
     problem_str += ')\n'
     problem_str += '\t(:fairness\n\t\t:a %s\n\t\t:b %s)' % (' '.join('(go-right p%d)'%(j) for j in range(1,i+1)), ' '.join('(go-left p%d)'%(j) for j in range(1,i+1)))
     problem_str += ')'

@@ -24,7 +24,7 @@ def get_experiments():
                         PDDL_DOM_PATHS/'foot3x2_unfair_01.pddl', DEFAULT_OUT/'foot3x2_unfair_01',
                         FairnessNoIndex)
     football = {}
-    for i in range(3, 11):
+    for i in range(3, 22, 2):
         istr = str(i).zfill(2)
         add_pddl_experiment(football, 'foot%s'%(istr), 'foot%s'%(istr), PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
                         PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s'%(istr)),

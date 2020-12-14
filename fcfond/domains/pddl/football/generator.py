@@ -1,6 +1,6 @@
 from fcfond.experiments import PDDL_DOM_PATHS
 
-for i in range(3, 11):
+for i in range(3, 22, 2):
     istr = str(i).zfill(2)
 
     problem_str = '(define (problem football%s) (:domain footballnx2)\n' % (istr)

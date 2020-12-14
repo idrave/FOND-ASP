@@ -23,16 +23,14 @@ def get_experiments():
     add_pddl_experiment(experiments, 'foot3x2_unfair_01', 'foot3x2_unfair_01', PDDL_DOM_PATHS/'foot3x2_d.pddl',
                         PDDL_DOM_PATHS/'foot3x2_unfair_01.pddl', DEFAULT_OUT/'foot3x2_unfair_01',
                         FairnessNoIndex)
-    add_pddl_experiment(experiments, 'football_5', 'football_5', PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
-                        PDDL_DOM_PATHS/'football'/'football_5.pddl', DEFAULT_OUT/'football_5',
+    football = {}
+    for i in range(3, 11):
+        istr = str(i).zfill(2)
+        add_pddl_experiment(football, 'foot%s'%(istr), 'foot%s'%(istr), PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
+                        PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s'%(istr)),
                         FairnessNoIndex)
-    add_pddl_experiment(experiments, 'football_3', 'football_3', PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
-                        PDDL_DOM_PATHS/'football'/'football_3.pddl', DEFAULT_OUT/'football_3',
-                        FairnessNoIndex)
-    add_pddl_experiment(experiments, 'football_6', 'football_6', PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
-                        PDDL_DOM_PATHS/'football'/'football_6.pddl', DEFAULT_OUT/'football_6',
-                        FairnessNoIndex)
-
+    add_experiment_list(football, 'foot', 'foot', list(football.keys()), DEFAULT_OUT/'football'/'all')
+    experiments.update(**football)
     add_experiment_list(experiments, 'benchmark_1', 'benchmark_1',
                         ['qnp'] + \
                         list(fcfond.experiments.ltl.get_experiments().keys()) + \

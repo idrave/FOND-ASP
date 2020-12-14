@@ -6,7 +6,7 @@ import sys
 import time
 from fcfond.names import *
 
-SLEEP_TIME=.0001
+SLEEP_TIME=.001
 a = []
 
 TIMEOUT = 'Timeout'
@@ -51,8 +51,9 @@ def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
     memory = []
     start = time.time()
     status = FINISH
+    out = ''
     try:
-        while True:            
+        while proc.is_running():            
             if time.time() - start > time_limit:
                 status = TIMEOUT
                 ps.terminate()
@@ -63,13 +64,18 @@ def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
                 status = MEMOUT
                 ps.terminate()
                 break
-            time.sleep(SLEEP_TIME)
-            if ps.poll():
-                break
+            #time.sleep(SLEEP_TIME)
+            #print(ps.pid, ps.poll())
+            #if ps.poll():
+            #    break
+            try:
+                out += ps.communicate(timeout=time_limit)[0].decode('utf-8')
+            except psutil.TimeoutExpired:
+                pass
+
     except:
         pass
     prof_out = {MEMORY: memory, STATUS: status}
-    out = ps.stdout.read().decode('utf-8')
     return out, prof_out
 
 def is_sat(string):

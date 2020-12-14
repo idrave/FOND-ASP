@@ -2,7 +2,7 @@ from pathlib import Path
 from fondpddl import encode_clingo_problem
 from fondpddl.algorithm import BreadthFirstSearch
 from fcfond.run import solve_pddl, solve_clingo, format_results
-from fcfond.planner import FairnessNoIndex, DualFondQnpPlanner
+from fcfond.planner import FairnessNoIndex, DualFondQnpPlanner, StrongCyclicPlanner
 from fcfond.experiments.utils import add_pddl_experiment, add_experiment_list
 import pandas as pd
 
@@ -24,13 +24,20 @@ def get_experiments():
                         PDDL_DOM_PATHS/'foot3x2_unfair_01.pddl', DEFAULT_OUT/'foot3x2_unfair_01',
                         FairnessNoIndex)
     football = {}
+    football_sc = {}
     for i in range(3, 22, 2):
         istr = str(i).zfill(2)
         add_pddl_experiment(football, 'foot%s'%(istr), 'foot%s'%(istr), PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
                         PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s'%(istr)),
                         FairnessNoIndex)
+    for i in range(5, 81, 5):
+        add_pddl_experiment(football_sc, 'foot%s_cyclic'%(istr), 'foot%s_cyclic'%(istr), PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
+                        PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s_cyclic'%(istr)),
+                        StrongCyclicPlanner)
     add_experiment_list(football, 'foot', 'foot', list(football.keys()), DEFAULT_OUT/'football'/'all')
+    add_experiment_list(football_sc, 'foot_cyclic', 'foot_cyclic', list(football_sc.keys()), DEFAULT_OUT/'football'/'all_cyclic')
     experiments.update(**football)
+    experiments.update(**football_sc)
     add_experiment_list(experiments, 'benchmark_1', 'benchmark_1',
                         ['qnp'] + \
                         list(fcfond.experiments.ltl.get_experiments().keys()) + \

@@ -31,6 +31,7 @@ def get_experiments():
                         PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s'%(istr)),
                         FairnessNoIndex)
     for i in range(5, 81, 5):
+        istr = str(i).zfill(2)
         add_pddl_experiment(football_sc, 'foot%s_cyclic'%(istr), 'foot%s_cyclic'%(istr), PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
                         PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s_cyclic'%(istr)),
                         StrongCyclicPlanner)

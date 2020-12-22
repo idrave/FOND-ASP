@@ -2,11 +2,9 @@
 
 Experiments for FOND+ using ASP Clingo encoding for the planner.
 
-
 ## Setup
 
 To run the system, you will need to have Clingo installed. In [Potassco](https://potassco.org/clingo/) webpage you can find information about how to set it up. The recommended installation is through a Conda environment running:
-
 
 ```bash
 conda install -c potassco clingo
@@ -24,16 +22,52 @@ cd aspplanner
 pip install -r requirements.txt
 pip install -e .
 ```
-You might want to apply the above steps inside an independent python environment.
+
+### Using a Python Pipenv environment
+
+You might want to apply the above steps inside an independent python environment. Here is one way using [Pipenv](https://pypi.org/project/pipenv/).
+
+First install `clingo`, by compiling and installing it via CMAKE as per instructions.
+
+Next, install `assplanner` and setup a Python environment:
+
+```bash
+$ git clone git@github.com:idrave/aspplanner.git
+$ pipenv shell  // create a new environment
+(aspplanner) $ 
+```
+
+Pipenv would have created a new environment, here named "`aspplanner`". 
+
+Next, install in the environment the dependencies stored in `Pipfile`:
+
+```bash
+$ pipenv install
+```
+
+Note that `Pipfile` makes reference to the `assplanner` repo via the `git@` protocol, so we require ssh authentication to GitHub for this to work (so that Pipenv will be able to bring the dependency from the repo).
+
+Afte rthis, all the dependencies would have been downlaoded and stored them under a folder like `~/.local/share/virtualenvs/aspplanner-HxHD4kSc`
+
+There is one more thing that needs to be installed: the Python Clingo component into the recently created Pipenv environment. When Clingo was installed, its  Python component where installed under the users' path
+`~/.local/lib/python3.8/site-packages/`. This include a `clingo.cpython-38-x86_64-linux-gnu.so` file and `clingo/` folder; copy them both to your Pipenv environment:
+
+```bash
+$ cp -a ~/.local/lib/python3.8/site-packages/clingo  ~/.local/share/virtualenvs/aspplanner.git-HxHD4kSc/lib/python3.8/site-packages/
+```
+
+Now `clingo` is part of the Pipenv environment, and all is ready to run.
 
 ## Running the planner
 
 After setting up requirements, you can run experiments using the ASP FOND+ planner with command:
+
 ```bash
 python -m fcfond.main [EXPERIMENTS] -out OUTPUT
 ```
 
-Where <code>EXPERIMENTS</code> is one or more available experiments for the planner. Some available experiments and sub-experiments (which can also be run independently)
+Where `EXPERIMENTS` is one or more available experiments for the planner. Some available experiments and sub-experiments (which can also be run independently)
+
 - qnp
     - clear_qnp
     - on_qnp
@@ -55,26 +89,34 @@ Where <code>EXPERIMENTS</code> is one or more available experiments for the plan
 
 TODO: display above info from command line option
 
-The output will include:
-- stdout.txt: file containing the standard output given by Clingo solver when run over the domains. This shows the resulting policy, among other types of information.
-- metrics.csv: contains a summary of several performance metrics
-- Output .lp files with Clingo symbols corresponding to the input domains
+The result will be left under folder `OUTPUT` and will include:
+
+- `stdout.txt`: file containing the standard output given by Clingo solver when run over the domains. This shows the resulting policy, among other types of information.
+- `metrics.csv`: contains a summary of several performance metrics
+- `.lp` files with Clingo symbols corresponding to the input domains
 
 The planner can also be run over any input pddl files using:
+
 ```bash
 python -m fcfond.main -pddl [DOMAIN PROBLEM]
 ```
+
 Passing as argument a sequence of domain and problem .pddl files.
 
 If you wish to test your own variation of the ASP encoding, you can do it using:
+
 ```bash
 python -m fcfond.main [EXPERIMENTS] -planner [PLANNER]
 ```
+
 Giving as input the path of the .lp file with a Clingo planner. You could also run it using Clingo directly over an .lp file specifying the problem domain as:
+
 ```bash
 clingo PLANNER DOMAIN
 ```
+
 To see more options available run
+
 ```bash
 python -m fcfond.main -h
 ```

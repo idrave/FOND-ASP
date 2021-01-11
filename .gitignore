@@ -6,3 +6,4 @@ __pycache__
 /fcfondplanner.egg-info
 /fcfond/res
 /results
+Pipfile.lock

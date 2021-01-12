@@ -4,6 +4,7 @@ import subprocess
 import re
 import sys
 import time
+import argparse
 from fcfond.names import *
 
 SLEEP_TIME=.001
@@ -97,8 +98,12 @@ def parse_clingo_out(output):
     return results
 
 if __name__ == "__main__":
-    args = sys.argv
-    out, prof = run_profile(args[1:])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('command', nargs='+')
+    parser.add_argument('-time', type=int, default=3600)
+    parser.add_argument('-mem', type=int, default=int(4e9), help='Memory limit in bytes')
+    args = parser.parse_args()
+    out, prof = run_profile(args.command, time_limit=args.time, memory_limit=args.mem)
     print(out)
     print('Status:', prof[STATUS])
     if prof[STATUS] == FINISH:

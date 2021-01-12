@@ -26,3 +26,14 @@ def encode_clingo_problem(domain_file, problem_file, iterator=None,
     symbols = fondpddl.encoding.clingo_problem_encoding(
                 problem, iterator, expand_goal=expand_goal, log=log, logdict=logdict)
     return symbols
+
+def get_labeled_graph(domain_file, problem_file, iterator=None,
+                        expand_goal=True, log=False, logdict=None):
+    iterator = iterator if iterator != None else fondpddl.algorithm.BreadthFirstSearch()
+    problem = load_domain_and_problem(domain_file, problem_file)
+    if log:
+        print(str(problem.domain))
+        print(str(problem))
+    symbols = fondpddl.encoding.clingo_problem_graph(
+                problem, iterator, expand_goal=expand_goal, log=log, logdict=logdict)
+    return symbols

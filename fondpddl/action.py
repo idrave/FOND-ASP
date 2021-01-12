@@ -50,8 +50,12 @@ class Action:
                     else:
                         out[i] = [problem.get_constant(o)]
                 for comb in get_combinations(out, [], lambda a, b: a+[b]):
+                    if len(set(comb)) < len(comb): # TODO: check for repeated parameters in another way
+                        continue
                     yield self.ground(comb)
             else:
+                if len(set(out)) < len(out): # TODO: check for repeated parameters in another way
+                    continue
                 constants = list(map(problem.get_constant, out))
                 yield self.ground(constants)
 

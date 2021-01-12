@@ -64,17 +64,12 @@ def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
                 status = MEMOUT
                 ps.terminate()
                 break
-            #time.sleep(SLEEP_TIME)
-            #print(ps.pid, ps.poll())
-            #if ps.poll():
-            #    break
             try:
-                out += ps.communicate(timeout=time_limit)[0].decode('utf-8')
-            except psutil.TimeoutExpired:
+                out += ps.communicate(timeout=SLEEP_TIME)[0].decode('utf-8')
+            except subprocess.TimeoutExpired:
                 pass
-
-    except:
-        pass
+    except Exception as e:
+        pass #TODO catch exceptions approprietly
     prof_out = {MEMORY: memory, STATUS: status}
     return out, prof_out
 
@@ -104,6 +99,7 @@ def parse_clingo_out(output):
 if __name__ == "__main__":
     args = sys.argv
     out, prof = run_profile(args[1:])
-    parsed_out = parse_clingo_out(out)
-    parsed_out[MAXMEM] = max(prof[MEMORY]) / 1e6
-    print(parsed_out)
+    print(out)
+    print('Status:', prof[STATUS])
+    if prof[STATUS] == FINISH:
+        print('Maximum memory usage: %.2fMB' % (max(prof[MEMORY]) / 1e6))

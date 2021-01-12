@@ -99,11 +99,11 @@ def parse_clingo_out(output):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('command', nargs='+')
+    parser.add_argument('command', type=str)
     parser.add_argument('-time', type=int, default=3600)
     parser.add_argument('-mem', type=int, default=int(4e9), help='Memory limit in bytes')
     args = parser.parse_args()
-    out, prof = run_profile(args.command, time_limit=args.time, memory_limit=args.mem)
+    out, prof = run_profile(args.command.split(), time_limit=args.time, memory_limit=args.mem)
     print(out)
     print('Status:', prof[STATUS])
     if prof[STATUS] == FINISH:

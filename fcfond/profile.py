@@ -54,7 +54,7 @@ def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
     status = FINISH
     out = ''
     try:
-        while proc.is_running():            
+        while proc.is_running():
             if time.time() - start > time_limit:
                 status = TIMEOUT
                 ps.terminate()
@@ -65,12 +65,15 @@ def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
                 status = MEMOUT
                 ps.terminate()
                 break
-            try:
-                out += ps.communicate(timeout=SLEEP_TIME)[0].decode('utf-8')
-            except subprocess.TimeoutExpired:
-                pass
+            #try:
+            #    ps.communicate(timeout=SLEEP_TIME)[0].decode('utf-8')
+            #except subprocess.TimeoutExpired:
+            #    pass
+            time.sleep(SLEEP_TIME)
     except Exception as e:
         pass #TODO catch exceptions approprietly
+    if status == FINISH:
+        out = ps.stdout.read().decode('utf-8')
     prof_out = {MEMORY: memory, STATUS: status}
     return out, prof_out
 

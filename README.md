@@ -109,7 +109,7 @@ If you wish to test your own variation of the ASP encoding, you can do it using:
 python -m fcfond.main [EXPERIMENTS] -planner [PLANNER]
 ```
 
-Giving as input the path of the .lp file with a Clingo planner. You could also run it using Clingo directly over an .lp file specifying the problem domain as:
+Giving as input the path of the `.lp` file with a Clingo planner. You could also run it using Clingo directly over an `.lp` file specifying the problem domain as:
 
 ```bash
 clingo PLANNER DOMAIN
@@ -120,3 +120,18 @@ To see more options available run
 ```bash
 python -m fcfond.main -h
 ```
+
+### Running standard FOND problems
+
+One can use the `assplanner` system to solve standard FOND problems (the benchmark from FOND-SAT can be found [here](fcfond/domains/pddl/fond-sat)), and either look for strong or strong-cyclic solutions (under which all effects are assumed "state-fair" as usual).
+
+There are basically four ways of doing so:
+
+1. Specialized the planner to _pure strong_ and use the FOND PDDL as is. This will assume effects of ND-actions are not fair and hence will look for strong solutions.
+2. Specialized the planner to _strong cyclic_ and use the FOND PDDL as is. This will assume effects of ND-actions are always fair and hence will look for strong-cyclic solutions.
+3. Use the FOND+ `aspplaner` without any specialization over a PDDL version that includes no fairness constraints.
+4. Use the FOND+ `aspplaner` without any specialization over a PDDL version that includes corresponding fairness constraints for each non-deterministic action `a` of the form `[A={a},B=empty]`.
+
+While optonss 1 and 2 require no changes to the PDDL files form the FOND-SAT benchmark, options 3 and 4 require adapting the PDDL to account for the constraints.
+
+

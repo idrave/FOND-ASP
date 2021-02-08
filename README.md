@@ -123,7 +123,7 @@ python -m fcfond.main -h
 
 ### Running standard FOND problems
 
-One can use the `assplanner` system to solve standard FOND problems (the benchmark from FOND-SAT can be found [here](fcfond/domains/pddl/fond-sat)), and either look for strong or strong-cyclic solutions (under which all effects are assumed "state-fair" as usual).
+One can use the `asplanner` system to solve standard FOND problems (the benchmark from FOND-SAT can be found [here](fcfond/domains/pddl/fond-sat)), and either look for strong or strong-cyclic solutions (under which all effects are assumed "state-fair" as usual).
 
 There are basically four ways of doing so:
 
@@ -132,6 +132,16 @@ There are basically four ways of doing so:
 3. Use the FOND+ `aspplaner` without any specialization over a PDDL version that includes no fairness constraints.
 4. Use the FOND+ `aspplaner` without any specialization over a PDDL version that includes corresponding fairness constraints for each non-deterministic action `a` of the form `[A={a},B=empty]`.
 
-While optonss 1 and 2 require no changes to the PDDL files form the FOND-SAT benchmark, options 3 and 4 require adapting the PDDL to account for the constraints.
+While options 1 and 2 require no changes to the PDDL files form the FOND-SAT benchmark, options 3 and 4 require adapting the PDDL to account for the constraints.
 
+For options 1 and 2 run:
+```bash
+# Option 1
+python -m fcfond.main -pddl [DOMAIN PROBLEM] --strong
+# Option 2
+python -m fcfond.main -pddl [DOMAIN PROBLEM] --strongcyclic
+```
 
+To run option 3, run the planner as usual (without --strong or --strongcyclic options) over an input PDDL file that contains no ```(:fairness ...)``` expressions. These usually have the format ```(:fairness :a ... :b ...)```, where the ground actions following ```:a``` and ```:b``` are sets of actions A and B respectively describing a FOND+ constraint [A, B]. These expressions allow to define PDDL problems with custom fairness assumptions for the FONDASP planner.
+
+To run option 4, run the planner as usual over an input PDDL file with an expression of the form ```(:fairness :a GROUND_ACTION)``` for each ground action appearing in the problem. Ground actions are expressed in the form ```(ACTION OBJ1 OBJ2 ... OBJN)```, for an action and the objects grounding its parameters. The action and objects must be defned in the PDDL domain definition.

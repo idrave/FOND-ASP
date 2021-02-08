@@ -1,7 +1,7 @@
 import argparse
 from fcfond.experiments import run_experiments, print_experiments
 from fcfond.run import run_pddl, run_clingo
-from fcfond.planner import FairnessNoIndex
+from fcfond.planner import FairnessNoIndex, StrongPlanner, StrongCyclicPlanner
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -12,6 +12,8 @@ def parse_args():
     parser.add_argument('-log', action='store_true')
     parser.add_argument('--fondf', action='store_true', help='Use default FOND+ planner for all experiments')
     parser.add_argument('-planner', default=None, help='Use Clingo encoding for planner in specified path')
+    parser.add_argument('--strong', action='store_true', help='Use Clingo specialized planner for pure strong planning')
+    parser.add_argument('--strongcyclic', action='store_true', help='Use Clingo specialized planner for pure strong cyclic planning')
     parser.add_argument('--expgoal', action='store_true', help='Whether to expand goal states in pddl translation')
     parser.add_argument('-k', nargs='?', const='3', default=None)
     parser.add_argument('-n', type=int, default=1, help='Number of clingo models (if 0 return all)')
@@ -27,6 +29,10 @@ def main():
         return'''
     if args.fondf:
         planner = FairnessNoIndex.FILE
+    elif args.strong:
+        planner = StrongPlanner.FILE
+    elif args.strongcyclic:
+        planner = StrongCyclicPlanner.FILE
     else:
         planner = args.planner
     if args.pddl != None:

@@ -58,6 +58,44 @@ $ cp -a ~/.local/lib/python3.8/site-packages/clingo  ~/.local/share/virtualenvs/
 
 Now `clingo` is part of the Pipenv environment, and all is ready to run.
 
+## PDDL for FOND+ problems
+
+The planning system uses the usual PDDL format for domain and problem specification. However, the PDDL is extended to allow the specification of  conditional fairness.
+
+A fairness expression is of the form:
+
+```pddl
+((:fairness :a ...  :b ...)
+```
+where the ground actions following ```:a``` and ```:b``` represent the sets of actions A and B, respectively, describing a FOND+ constraint `[A, B]`. These expressions allow to define PDDL problems with custom fairness assumptions for the FOND-ASP planner. 
+
+For example:
+
+```pddl
+(:fairness
+        :a (go-right up) (go-right center) (go-right down)
+        :b (go-left up) (go-left center) (go-left down)))
+```
+
+The fairness constraints should mention only ground actions. So, when operators have arguments, the relevant grounded instances must be listed in the fairness constraints. For example:
+
+```pddl
+ (:fairness
+        :a (go-right p1) (go-right p2) (go-right p3)
+        :b (go-left p1) (go-left p2) (go-left p3)))
+```
+
+To specify fairness constraints where `B` is empty, the `:b` section is fully omitted:
+
+```pddl
+(:fairness
+        :a (go-up down p3 p2)
+           (go-up p3 p2 p1)
+           (go-up p2 p1 up)
+           (go-down up p1 p2)
+           (go-down p1 p2 p3)
+           (go-down p2 p3 down))
+```
 ## Running the planner
 
 After setting up requirements, you can run experiments using the ASP FOND+ planner with command:
@@ -123,25 +161,30 @@ python -m fcfond.main -h
 
 ### Running standard FOND problems
 
-One can use the `asplanner` system to solve standard FOND problems (the benchmark from FOND-SAT can be found [here](fcfond/domains/pddl/fond-sat)), and either look for strong or strong-cyclic solutions (under which all effects are assumed "state-fair" as usual).
+The FOND+ `asplanner` system can be used to solve _standard_ FOND problems in which either an adversarial or state-fair view of non-deterministic effect is assumed. For the former, one seeks _strong_ plan solutions; for the former, the task is to find _strong-cyclic_ plan solutions. Two _specialized_ versions the base system, via `--strong` and `--strongcyclic`, are provided to solve these problems.
 
-There are basically four ways of doing so:
+The benchmark from the FOND-SAT planning system can be found [here](fcfond/domains/pddl/fond-sat) in this repo.
 
-1. Specialized the planner to _pure strong_ and use the FOND PDDL as is. This will assume effects of ND-actions are not fair and hence will look for strong solutions.
-2. Specialized the planner to _strong cyclic_ and use the FOND PDDL as is. This will assume effects of ND-actions are always fair and hence will look for strong-cyclic solutions.
-3. Use the FOND+ `aspplaner` without any specialization over a PDDL version that includes no fairness constraints.
-4. Use the FOND+ `aspplaner` without any specialization over a PDDL version that includes corresponding fairness constraints for each non-deterministic action `a` of the form `[A={a},B=empty]`.
+To solve standard FOND problems under the adversarial semantic (and hence look for strong solution plans) one can either:
 
-While options 1 and 2 require no changes to the PDDL files form the FOND-SAT benchmark, options 3 and 4 require adapting the PDDL to account for the constraints.
+1. Use a _specialized_ version of the `asplanner` planner to _pure strong_ together with  the PDDL file of the FOND problem as is, with no modifications:
 
-For options 1 and 2 run:
-```bash
-# Option 1
-python -m fcfond.main -pddl [DOMAIN PROBLEM] --strong
-# Option 2
-python -m fcfond.main -pddl [DOMAIN PROBLEM] --strongcyclic
-```
+    ```bash
+    python -m fcfond.main -pddl [DOMAIN PROBLEM] --strong
+    ```
 
-To run option 3, run the planner as usual (without --strong or --strongcyclic options) over an input PDDL file that contains no ```(:fairness ...)``` expressions. These usually have the format ```(:fairness :a ... :b ...)```, where the ground actions following ```:a``` and ```:b``` are sets of actions A and B respectively describing a FOND+ constraint [A, B]. These expressions allow to define PDDL problems with custom fairness assumptions for the FONDASP planner.
+    This version will assume effects of ND-actions are not fair and hence will look for strong solutions. For example:
 
-To run option 4, run the planner as usual over an input PDDL file with an expression of the form ```(:fairness :a GROUND_ACTION)``` for each ground action appearing in the problem. Ground actions are expressed in the form ```(ACTION OBJ1 OBJ2 ... OBJN)```, for an action and the objects grounding its parameters. The action and objects must be defned in the PDDL domain definition.
+2. Use the `asplanner` planner without any specialization but over a PDDL version that includes _no_ fairness constraints, that is, no `(:fairness :a ... b: ...)` clauses.
+
+Similarly, to solve standard FOND problems under the state-fair semantic (and hence look for strong-cyclic solution plans) one can either:
+
+1. Use a _specialized_ version of the `aspplaner` planner to _strong cyclic_ together with  the PDDL file of the FOND problem as is, with no modifications. 
+
+    ```bash
+    python -m fcfond.main -pddl [DOMAIN PROBLEM] --strongcyclic
+    ```
+
+    This version will assume effects of ND-actions are always fair and hence will look for strong-cyclic solutions.
+
+2. Use the `aspplaner` planner without any specialization but over a PDDL version extended to include corresponding fairness constraints for each non-deterministic ground action `a` of the form `[A={a},B=empty]`. This means one `(:fairness :a GROUND_ACTION)` for each _ground_ action in the problem needs to be included.

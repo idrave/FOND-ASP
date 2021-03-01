@@ -143,22 +143,36 @@ python -m fcfond.main -pddl [DOMAIN PROBLEM]
 
 Passing as argument a sequence of domain and problem .pddl files.
 
-If you wish to test your own variation of the ASP encoding, you can do it using:
+To see more options available run
+
+```bash
+python -m fcfond.main -h
+```
+
+### Using a different Clingo encoding
+
+If you wish to test a different variation of the ASP planner encoding, you can do it using:
 
 ```bash
 python -m fcfond.main [EXPERIMENTS] -planner [PLANNER]
 ```
 
-Giving as input the path of the `.lp` file with a Clingo planner. You could also run it using Clingo directly over an `.lp` file specifying the problem domain as:
+Giving as input the path of the `.lp` file with a Clingo planner. Such Clingo encoding could expect to receive as input atoms:
+
+- state(S): S is a state
+- initialState(S): S is the initial state
+- goal(S): S is a goal state
+- action(A): A is an action
+- transition(S1, A, S2): there is a transition from S1 to S2 applying action A
+- con_A(A, I): action A belongs to set of constraints A<sub>i</sub>
+- con_B(A, I): action A belongs to set of constraints B<sub>i</sub>
+
+The output should be atoms policy(S, A) specifying the action A to be applied in state S.
+
+You could also run a variation of the planner using Clingo directly over an `.lp` file specifying the problem domain as:
 
 ```bash
 clingo PLANNER DOMAIN
-```
-
-To see more options available run
-
-```bash
-python -m fcfond.main -h
 ```
 
 ### Running standard FOND problems

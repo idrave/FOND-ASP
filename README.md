@@ -159,15 +159,15 @@ python -m fcfond.main [EXPERIMENTS] -planner [PLANNER]
 
 Giving as input the path of the `.lp` file with a Clingo planner. Such Clingo encoding could expect to receive as input atoms:
 
-- state(S): S is a state
-- initialState(S): S is the initial state
-- goal(S): S is a goal state
-- action(A): A is an action
-- transition(S1, A, S2): there is a transition from S1 to S2 applying action A
-- con_A(A, I): action A belongs to set of constraints A<sub>i</sub>
-- con_B(A, I): action A belongs to set of constraints B<sub>i</sub>
+- `state(S)`: `S` is a state
+- `initialState(S)`: `S` is the initial state
+- `goal(S)`: `S` is a goal state
+- `action(A)`: `A` is an action
+- `transition(S1, A, S2)`: there is a transition from state `S1` to state `S2` applying action `A`
+- `con_A(A, I)`: action `A` belongs to set of constraints `A_I`
+- `con_B(A, I)`: action `A` belongs to set of constraints `B_I`
 
-The output should be atoms policy(S, A) specifying the action A to be applied in state S.
+The output should be atoms `policy(S, A)` specifying the action A to be applied in state S.
 
 You could also run a variation of the planner using Clingo directly over an `.lp` file specifying the problem domain as:
 
@@ -177,7 +177,11 @@ clingo PLANNER DOMAIN
 
 ### Running standard FOND problems
 
-The FOND+ `asplanner` system can be used to solve _standard_ FOND problems in which either an adversarial or state-fair view of non-deterministic effect is assumed. For the former, one seeks _strong_ plan solutions; for the former, the task is to find _strong-cyclic_ plan solutions. Two _specialized_ versions the base system, via `--strong` and `--strongcyclic`, are provided to solve these problems.
+The FOND+ `asplanner` system can be used to solve _standard_ (i.e., non-dual) FOND problems in which either an adversarial or state-fair view of non-deterministic effect is assumed.
+
+As usual, for adversarial FOND, one seeks _strong_ plan solutions; whereas for FOND under state-fairness assumption, one looks for _strong-cyclic_ plan solutions. 
+
+Two _specialized_ versions the base system, via `--strong` and `--strongcyclic`, are provided to solve these problems.
 
 The benchmark from the FOND-SAT planning system can be found [here](fcfond/domains/pddl/fond-sat) in this repo.
 

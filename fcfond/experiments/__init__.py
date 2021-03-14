@@ -13,6 +13,34 @@ import fcfond.experiments.ltl
 import fcfond.experiments.fondsat
 from fcfond.planner import FairnessNoIndex
 
+def list_experiments(name):
+    experiments = get_experiments()
+    if not len(name):
+        print('Experiments lists:')
+        print('\tqnp\n\tltl\n\tfond_sat\n\tnested\n\tsequential\n\tunfair_qnp\n\tfoot\n\tfoot_cyclic\n\tbenchmark_1')
+        return
+    
+    if name not in experiments or EXPERIMENTS not in experiments[name]:
+        raise ValueError('Input %s is not a valid list of experiments' % (name))
+
+    lists = []
+    exps = []
+    for e in experiments[name][EXPERIMENTS]:
+        if EXPERIMENTS in experiments[e]:
+            lists.append(e)
+        else:
+            exps.append(e) 
+
+    print('Listing %s:' % (name))
+    if len(lists):
+        print('Experiments lists:')
+        for exp in lists:
+            print('\t'+exp)
+    if len(exps):
+        print('Single experiments:')
+        for exp in exps:
+            print('\t'+exp)
+
 def get_experiments():
     experiments = {**fcfond.experiments.qnp.get_experiments(),
                    **fcfond.experiments.ltl.get_experiments(),

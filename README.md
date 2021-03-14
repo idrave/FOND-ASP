@@ -121,13 +121,22 @@ Where `EXPERIMENTS` is one or more available experiments for the planner. Some a
   - minlist
   - member-tree
   - swamp
-- foot3x2
+- foot
+  - footXX, for an odd XX from 03 to 21
 - sequential
   - sequentialXX, for XX from 02 to 10
 - nested
   - nestedXX, for XX from 02 to 10
+- unfair_qnp: QNPs without terminating solution
+- fond_sat: several domains of pure strong and pure strong cyclic planning
 
-TODO: display above info from command line option
+To get a list of more available experiments type
+
+```
+python -m fcfond.main -list LIST
+```
+
+Where `LIST` can be one of the experiment lists above.
 
 The result will be left under folder `OUTPUT` and will include:
 
@@ -167,7 +176,11 @@ Giving as input the path of the `.lp` file with a Clingo planner. Such Clingo en
 - `con_A(A, I)`: action `A` belongs to set of constraints `A_I`
 - `con_B(A, I)`: action `A` belongs to set of constraints `B_I`
 
-The output should be atoms `policy(S, A)` specifying the action A to be applied in state S.
+The output should be atoms `policy(S, A)` specifying the action A to be applied in state S. In out sample experiments the states and actions are represented as integers. To make the output more human readable, we include the following rule in our program:
+
+```#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).```
+
+Where id/2 symbols are generating automatically by the PDDL parser to describe the states and actions assigned to each integer ID.
 
 You could also run a variation of the planner using Clingo directly over an `.lp` file specifying the problem domain as:
 

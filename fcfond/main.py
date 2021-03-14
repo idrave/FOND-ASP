@@ -1,15 +1,16 @@
 import argparse
-from fcfond.experiments import run_experiments, print_experiments
+from fcfond.experiments import run_experiments, list_experiments
 from fcfond.run import run_pddl, run_clingo
 from fcfond.planner import FairnessNoIndex, StrongPlanner, StrongCyclicPlanner
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('experiments', nargs='*', help='Experiment names to be run')
+    parser.add_argument('-list', nargs='?', const='', default=None, help='Display contents of a list of experiments. If none specified, show a list of options.')
     parser.add_argument('-pddl', nargs='+', default=None, help='PDDL files on which to run planner [as domain,problem pairs]')
     parser.add_argument('-clingo', nargs='+', default=None, help='Clingo files on which to run planner')
-    parser.add_argument('-out', default=None)
-    parser.add_argument('-log', action='store_true')
+    parser.add_argument('-out', default=None, help='Output folder')
+    parser.add_argument('-log', action='store_true', help='Print addigional information')
     parser.add_argument('--fondf', action='store_true', help='Use default FOND+ planner for all experiments')
     parser.add_argument('-planner', default=None, help='Use Clingo encoding for planner in specified path')
     parser.add_argument('--strong', action='store_true', help='Use Clingo specialized planner for pure strong planning')
@@ -24,9 +25,9 @@ def parse_args():
 
 def main():
     args = parse_args()
-    '''if args.print:
-        print_experiments(args.experiments)
-        return'''
+    if args.list != None:
+        list_experiments(args.list)
+        return
     if args.fondf:
         planner = FairnessNoIndex.FILE
     elif args.strong:

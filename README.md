@@ -11,14 +11,16 @@ conda install -c potassco clingo
 ```
 
 Independently of the setup method used, you should be able to run from command line:
+
 ```bash
 clingo -h
 ```
 
-Having clingo installed, you will need to run:
+Having Clingo installed, you will need to run:
+
 ```bash
-git clone https://github.com/idrave/aspplanner.git
-cd aspplanner
+git clone https://github.com/idrave/fond-asp.git
+cd fond-asp
 pip install -r requirements.txt
 pip install -e .
 ```
@@ -27,17 +29,17 @@ pip install -e .
 
 You might want to apply the above steps inside an independent python environment. Here is one way using [Pipenv](https://pypi.org/project/pipenv/).
 
-First install `clingo`, by compiling and installing it via CMAKE as per instructions.
+First install Clingo, by compiling and installing it via CMAKE as per instructions.
 
-Next, install `assplanner` and setup a Python environment:
+Next, install `FOND-ASP` and setup a Python environment:
 
 ```bash
-$ git clone git@github.com:idrave/aspplanner.git
+$ git clone git@github.com:idrave/FOND-ASP.git
 $ pipenv shell  // create a new environment
-(aspplanner) $ 
+(fond-asp) $
 ```
 
-Pipenv would have created a new environment, here named "`aspplanner`". 
+Pipenv would have created a new environment, here named "`fond-asp`".
 
 Next, install in the environment the dependencies stored in `Pipfile`:
 
@@ -45,15 +47,14 @@ Next, install in the environment the dependencies stored in `Pipfile`:
 $ pipenv install
 ```
 
-Note that `Pipfile` makes reference to the `assplanner` repo via the `git@` protocol, so we require ssh authentication to GitHub for this to work (so that Pipenv will be able to bring the dependency from the repo).
+Note that `Pipfile` makes reference to the `fond-asp` repo via the `git@` protocol, so we require ssh authentication to GitHub for this to work (so that Pipenv will be able to bring the dependency from the repo).
 
-Afte rthis, all the dependencies would have been downlaoded and stored them under a folder like `~/.local/share/virtualenvs/aspplanner-HxHD4kSc`
+After this, all the dependencies would have been downloaded and stored them under a folder like `~/.local/share/virtualenvs/aspplanner-HxHD4kSc`
 
-There is one more thing that needs to be installed: the Python Clingo component into the recently created Pipenv environment. When Clingo was installed, its  Python component where installed under the users' path
-`~/.local/lib/python3.8/site-packages/`. This include a `clingo.cpython-38-x86_64-linux-gnu.so` file and `clingo/` folder; copy them both to your Pipenv environment:
+There is one more thing that needs to be installed: the Python Clingo component into the recently created Pipenv environment. When Clingo was installed, its  Python component where installed under the users' path `~/.local/lib/python3.8/site-packages/`. This include a `clingo.cpython-38-x86_64-linux-gnu.so` file and `clingo/` folder; copy them both to your Pipenv environment:
 
 ```bash
-$ cp -a ~/.local/lib/python3.8/site-packages/clingo  ~/.local/share/virtualenvs/aspplanner.git-HxHD4kSc/lib/python3.8/site-packages/
+$ cp -a ~/.local/lib/python3.8/site-packages/clingo  ~/.local/share/virtualenvs/fond-asp.git-HxHD4kSc/lib/python3.8/site-packages/
 ```
 
 Now `clingo` is part of the Pipenv environment, and all is ready to run.
@@ -68,7 +69,7 @@ A fairness expression allow to define PDDL problems with _custom_ fairness assum
 ((:fairness :a ...  :b ...)
 ```
 
-where the ground actions following ```:a``` and ```:b``` represent the sets of actions A and B, respectively, describing a FOND+ constraint `[A, B]`: if any action in `A` is applied infinitely often in a state, all its effects will ensue infinitely often provided (on those executions), provided all the actions in `B` are executed _finitely_ often.
+where the ground actions following ```:a``` and ```:b``` represent the sets of actions A and B, respectively, describing a FOND+ constraint `[A, B]`: if any action in `A` is applied infinitely often in a state, all its effects will ensue infinitely often along that state, provided all the actions in `B` are executed _finitely_ often.
 
 For example:
 
@@ -83,6 +84,20 @@ Note that the fairness constraints should mention only _ground_ actions. So, whe
 ```pddl
  (:fairness
         :a (go-right p1) (go-right p2) (go-right p3)
+        :b (go-left p1) (go-left p2) (go-left p3)))
+```
+
+which is equivalent to:
+
+```pddl
+ (:fairness
+        :a (go-right p1) (go-right p2) (go-right p3)
+        :b (go-left p1) (go-left p2) (go-left p3)))
+ (:fairness
+        :a (go-right p2)
+        :b (go-left p1) (go-left p2) (go-left p3)))
+ (:fairness
+        :a (go-right p3)
         :b (go-left p1) (go-left p2) (go-left p3)))
 ```
 
@@ -106,33 +121,33 @@ After setting up requirements, you can run experiments using the ASP FOND+ plann
 python -m fcfond.main [EXPERIMENTS] -out OUTPUT
 ```
 
-Where `EXPERIMENTS` is one or more available experiments for the planner. Some available experiments and sub-experiments (which can also be run independently)
+Where `EXPERIMENTS` is one or more available experiments for the planner. Some available experiments and sub-experiments (which can also be run independently) are:
 
-- qnp
-  - clear_qnp
-  - on_qnp
-  - gripper_qnp
-  - delivery_qnp
-- ltl
-  - list
-  - double-list
-  - tree
-  - graph
-  - minlist
-  - member-tree
-  - swamp
-- foot
-  - footXX, for an odd XX from 03 to 21
-- sequential
-  - sequentialXX, for XX from 02 to 10
-- nested
-  - nestedXX, for XX from 02 to 10
-- unfair_qnp: QNPs without terminating solution
-- fond_sat: several domains of pure strong and pure strong cyclic planning
+- `qnp`
+  - `clear_qnp`
+  - `on_qnp`
+  - `gripper_qnp`
+  - `delivery_qnp`
+- `ltl`
+  - `list`
+  - `double-list`
+  - `tree`
+  - `graph`
+  - `minlist`
+  - `member-tree`
+  - `swamp`
+- `foot`
+  - `footXX`, for an odd `XX` from `03` to `21`
+- seq`uential`
+  - `sequentialXX`, for `XX` from `02` to `10`
+- `nested`
+  - `nestedXX`, for `XX` from `02` to `10`
+- `unfair_qnp`: QNPs without terminating solution
+- `fond_sat`: several domains of pure strong and pure strong cyclic planning
 
 To get a list of more available experiments type
 
-```
+```bash
 python -m fcfond.main -list LIST
 ```
 
@@ -202,7 +217,7 @@ The benchmark from the FOND-SAT planning system can be found [here](fcfond/domai
 
 To solve standard FOND problems under the _adversarial semantics_ (and hence look for strong solution plans) one can either:
 
-1. Use a _specialized_ version of the `asplanner` planner to _pure strong_ with the PDDL file of the FOND problem "as is" (i.e., with no modifications):
+1. Use a _specialized_ version of the planner to _pure strong_ with the PDDL file of the FOND problem "as is" (i.e., with no modifications):
 
     ```bash
     python -m fcfond.main -pddl [DOMAIN PROBLEM] --strong
@@ -210,7 +225,7 @@ To solve standard FOND problems under the _adversarial semantics_ (and hence loo
 
     This version will assume effects of ND-actions are not fair and hence will look for strong solutions. For example:
 
-2. Use the `asplanner` planner without any specialization but
+2. Use the planner without any specialization but
 with the PDDL file of the FOND problem "as is" (i.e., with no modifications). Note this PDDL will includes _no_ fairness constraints, that is, no `(:fairness :a ... b: ...)` clauses and thus every non-determinism will be adversarial.
 
 As one can see, in both above cases, the PDDL file remains the same and includes no conditional fairness directives.
@@ -219,7 +234,7 @@ As one can see, in both above cases, the PDDL file remains the same and includes
 
 Similarly, to solve standard FOND problems under the _state-fair semantics_ (and hence look for strong-cyclic solution plans) one can either:
 
-1. Use a _specialized_ version of the `aspplaner` planner to _strong cyclic_ together with  the PDDL file of the FOND problem as is, with no modifications.
+1. Use a _specialized_ version of the planner to _strong cyclic_ together with  the PDDL file of the FOND problem as is, with no modifications.
 
     ```bash
     python -m fcfond.main -pddl [DOMAIN PROBLEM] --strongcyclic
@@ -227,4 +242,4 @@ Similarly, to solve standard FOND problems under the _state-fair semantics_ (and
 
     This version will assume effects of ND-actions are always fair and hence will look for strong-cyclic solutions.
 
-2. Use the `aspplaner` planner without any specialization but over a PDDL version extended to include corresponding fairness constraints for each non-deterministic ground action `a` of the form `[A={a},B=empty]`. This means one `(:fairness :a GROUND_ACTION)` for each _ground_ action in the problem needs to be included.
+2. Use the planner without any specialization but over a PDDL version extended to include corresponding fairness constraints for each non-deterministic ground action `a` of the form `[A={a},B=empty]`. This means one `(:fairness :a GROUND_ACTION)` for each _ground_ action in the problem needs to be included.

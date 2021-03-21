@@ -2,6 +2,16 @@
 
 Experiments for FOND+ using ASP Clingo encoding for the planner.
 
+- [FOND-PLUS](#fond-plus)
+  - [Setup](#setup)
+    - [Using a Python Pipenv environment](#using-a-python-pipenv-environment)
+  - [PDDL for FOND+ problems](#pddl-for-fond-problems)
+  - [Running the planner](#running-the-planner)
+    - [Using a different Clingo encoding](#using-a-different-clingo-encoding)
+    - [Running standard FOND problems](#running-standard-fond-problems)
+      - [FOND problem under adversarial semantics](#fond-problem-under-adversarial-semantics)
+      - [FOND problem under sate-fair semantics](#fond-problem-under-sate-fair-semantics)
+
 ## Setup
 
 To run the system, you will need to have Clingo installed. In [Potassco](https://potassco.org/clingo/) webpage you can find information about how to set it up. The recommended installation is through a Conda environment running:

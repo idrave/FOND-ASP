@@ -1,3 +1,4 @@
+from fcfond.experiments.names import OUTPUT
 from fcfond.profile import run_profile, parse_clingo_out, MAXMEM, MEMORY
 from fcfond.planner import DualFondQnpPlanner
 from fondpddl.algorithm import BreadthFirstSearch
@@ -52,10 +53,9 @@ def solve_pddl(name, domain_file, problem_file, planner: Planner,
     logs[STDOUT] = output
     return logs
 
-def run_pddl(pddl_files, timeout, memout, output, log=False, n=1, planner=None,
+def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=None,
                     expgoal=False, k=None, threads=1):
-    
-    out_path = Path(output)
+    out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
     results = []

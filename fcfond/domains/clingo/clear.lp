@@ -26,3 +26,12 @@ transition(4, 3, 1).
 %Var 1: n
 con_A(2, 1).
 con_B(3, 1).
+
+id(state("<n-gr0()>"),1).
+id(state("<>"),2).
+id(state("<n-gr0(),holding()>"),3).
+id(state("<holding()>"),4).
+id(action("putaway()"),1).
+id(action("pick-above-x()"),2).
+id(action("put-above-x()"),3).
+id(action("pick-other()"),4).

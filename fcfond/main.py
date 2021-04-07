@@ -5,23 +5,37 @@ from fcfond.planner import FairnessNoIndex, StrongPlanner, StrongCyclicPlanner
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('experiments', nargs='*', help='Experiment names to be run')
-    parser.add_argument('-list', nargs='?', const='', default=None, help='Display contents of a list of experiments. If none specified, show a list of options.')
-    parser.add_argument('-pddl', nargs='+', default=None, help='PDDL files on which to run planner [as domain,problem pairs]')
-    parser.add_argument('-clingo', nargs='+', default=None, help='Clingo files on which to run planner')
+    parser.add_argument('experiments', nargs='*',
+                        help='Experiment names to be run')
+    parser.add_argument('-list', nargs='?', const='', default=None,
+                        help='Display contents of a list of experiments. If none specified, show a list of options.')
+    parser.add_argument('-pddl', nargs='+', default=None,
+                        help='PDDL files on which to run planner [as domain,problem pairs]')
+    parser.add_argument('-clingo', nargs='+', default=None,
+                        help='Clingo files on which to run planner')
     parser.add_argument('-out', default=None, help='Output folder')
-    parser.add_argument('-log', action='store_true', help='Print addigional information')
-    parser.add_argument('--fondf', action='store_true', help='Use default FOND+ planner for all experiments')
-    parser.add_argument('-planner', default=None, help='Use Clingo encoding for planner in specified path')
-    parser.add_argument('--strong', action='store_true', help='Use Clingo specialized planner for pure strong planning')
-    parser.add_argument('--strongcyclic', action='store_true', help='Use Clingo specialized planner for pure strong cyclic planning')
-    parser.add_argument('--expgoal', action='store_true', help='Whether to expand goal states in pddl translation')
+    parser.add_argument('-log', action='store_true',
+                        help='Print additional information')
+    parser.add_argument('--fondf', action='store_true',
+                        help='Use default FOND+ planner for all experiments')
+    parser.add_argument('-planner', default=None,
+                        help='Use Clingo encoding for planner in specified path')
+    parser.add_argument('--strong', action='store_true',
+                        help='Use Clingo specialized planner for pure strong planning')
+    parser.add_argument('--strongcyclic', action='store_true',
+                        help='Use Clingo specialized planner for pure strong cyclic planning')
+    parser.add_argument('--expgoal', action='store_true',
+                        help='Whether to expand goal states in pddl translation')
     parser.add_argument('-k', nargs='?', const='3', default=None)
-    parser.add_argument('-n', type=int, default=1, help='Number of clingo models (if 0 return all)')
+    parser.add_argument('-n', type=int, default=1,
+                        help='Number of clingo models; 0 to return all (default: %(default)s)')
     parser.add_argument('-t', type=int, default=1, help='Number of threads')
-    parser.add_argument('-timeout', type=float, default=1800.0, help='Timeout for each experiment')
-    parser.add_argument('-memout', type=float, default=8e9, help='Memory limit for each experiment')
+    parser.add_argument('-timeout', type=float, default=1800.0,
+                        help='Timeout for each experiment (default: %(default)s)')
+    parser.add_argument('-memout', type=float, default=8e9,
+                        help='Memory limit for each experiment (default: %(default)s)')
     return parser.parse_args()
+
 
 def main():
     args = parse_args()

@@ -1,3 +1,4 @@
+from fcfond.experiments.names import OUTPUT
 from fcfond.profile import run_profile, parse_clingo_out, MAXMEM, MEMORY
 from fcfond.planner import FairnessNoIndex
 from fondpddl.algorithm import BreadthFirstSearch
@@ -29,7 +30,6 @@ def solve_pddl(name, domain_file, problem_file, planner: Planner,
     symbols = encode_clingo_problem(
                         domain_file, problem_file, iterator=iterator,
                         expand_goal=expand_goal, log=log, logdict=logs)
-    print(name, output_dir)
     processed = str(Path(output_dir)/('proc_' + name + '.lp'))
     process = psutil.Process(os.getpid())
     with open(processed, 'w') as fp:
@@ -52,15 +52,14 @@ def solve_pddl(name, domain_file, problem_file, planner: Planner,
     logs[STDOUT] = output
     return logs
 
-def run_pddl(pddl_files, timeout, memout, output, log=False, n=1, planner=None,
+def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=None,
                     expgoal=False, k=None, threads=1):
-    output = output if output != None else 'output'
-    out_path = Path(output)
+    out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
     results = []
     for domain, problem in pddl_files:
-        res = solve_pddl(Path(problem).stem, domain, problem, planner, output,
+        res = solve_pddl(Path(problem).stem, domain, problem, planner, str(out_path),
                          BreadthFirstSearch(), timeout, memout, log=log,
                          n=n, expgoal=expgoal, k=k, threads=threads)
         format_results(res)
@@ -73,16 +72,15 @@ def run_pddl(pddl_files, timeout, memout, output, log=False, n=1, planner=None,
     if log:
         print(stdout)
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
-    df.to_csv(str(Path(output)/'metrics.csv'),index=False)
+    df.to_csv(str(out_path/'metrics.csv'),index=False)
 
     if log:
         print(df)
-    with open(str(Path(output)/'stdout.txt'), 'w') as fp:
+    with open(str(out_path/'stdout.txt'), 'w') as fp:
         fp.write(stdout)
 
 def solve_clingo(name, domain_file, planner: Planner, output_dir,
                  timelimit, memlimit, pre_process=False, **kwargs):
-    output_dir = output_dir if output_dir != None else 'output'
     logs = {PROBLEM: name}
     if pre_process:
         symbols = planner.relevant_symbols(domain_file, logdict=logs) #TODO change this (?)
@@ -102,12 +100,12 @@ def solve_clingo(name, domain_file, planner: Planner, output_dir,
 def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=False,
                 n=1, planner=None, k=None, threads=1):
     
-    out_path = Path(output)
+    out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
     results = []
     for problem in clingo_files:
-        res = solve_clingo(Path(problem).stem, problem, planner, output,
+        res = solve_clingo(Path(problem).stem, problem, planner, str(output),
                          timeout, memout, log=log,
                          n=n, k=k, threads=threads)
         format_results(res)
@@ -120,11 +118,11 @@ def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=Fal
     if log:
         print(stdout)
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
-    df.to_csv(str(Path(output)/'metrics.csv'),index=False)
+    df.to_csv(str(out_path/'metrics.csv'),index=False)
 
     if log:
         print(df)
-    with open(str(Path(output)/'stdout.txt'), 'w') as fp:
+    with open(str(out_path/'stdout.txt'), 'w') as fp:
         fp.write(stdout)
 
 def format_results(results):

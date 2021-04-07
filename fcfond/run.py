@@ -1,5 +1,5 @@
 from fcfond.profile import run_profile, parse_clingo_out, MAXMEM, MEMORY
-from fcfond.planner import DualFondQnpPlanner
+from fcfond.planner import FairnessNoIndex
 from fondpddl.algorithm import BreadthFirstSearch
 from fondpddl import encode_clingo_problem
 from fcfond.planner import Planner
@@ -47,14 +47,14 @@ def solve_pddl(name, domain_file, problem_file, planner: Planner,
     domain_file = processed
     logs[PREPROCESS] = time.time() - start
     print('Pddl processed')
-    output, profile = DualFondQnpPlanner().solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
+    output, profile = FairnessNoIndex().solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
     logs[STDOUT] = output
     return logs
 
 def run_pddl(pddl_files, timeout, memout, output, log=False, n=1, planner=None,
                     expgoal=False, k=None, threads=1):
-    
+    output = output if output != None else 'output'
     out_path = Path(output)
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
@@ -82,6 +82,7 @@ def run_pddl(pddl_files, timeout, memout, output, log=False, n=1, planner=None,
 
 def solve_clingo(name, domain_file, planner: Planner, output_dir,
                  timelimit, memlimit, pre_process=False, **kwargs):
+    output_dir = output_dir if output_dir != None else 'output'
     logs = {PROBLEM: name}
     if pre_process:
         symbols = planner.relevant_symbols(domain_file, logdict=logs) #TODO change this (?)
@@ -93,7 +94,7 @@ def solve_clingo(name, domain_file, planner: Planner, output_dir,
         print('Preprocessing done')
     else:
         logs[PREPROCESS] = 0
-    output, profile = DualFondQnpPlanner().solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
+    output, profile = FairnessNoIndex().solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
     logs[STDOUT] = output
     return logs

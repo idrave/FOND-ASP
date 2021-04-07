@@ -14,6 +14,8 @@ STATE_N = 'States'
 ACTION_N = 'Actions'
 STDOUT = 'Stdout'
 RESULT = 'Result'
+SYMBOLS= 'symbols'
+RULES = 'rules'
 
 STATUS = 'Status'
 TIMEOUT = 'Timeout'

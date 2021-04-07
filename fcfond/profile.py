@@ -15,36 +15,52 @@ MEMOUT = 'Memory out'
 FINISH = 'Finished'
 
 def profile(pipe, pid, time_limit, memory_limit):
-    ps = psutil.Process(pid=pid)
+    try:
+        ps = psutil.Process(pid=pid)
+    except:
+        ps = None
     mem = []
     start = time.time()
     status = FINISH
+
     while True:
-        if ps.is_running():
-            if time.time() - start > time_limit:
-                status = TIMEOUT
-                try:
+        if ps != None and not ps.is_running():
+            try:
+                if time.time() - start > time_limit:
+                    status = TIMEOUT
                     ps.terminate()
-                except:
-                    pass
-            else:
-                try:
+                else:
                     memory = ps.memory_info().rss
-                    
                     if memory > memory_limit:
                         status = MEMOUT
-                        try:
-                            ps.terminate()
-                        except:
-                            pass
-                    mem.append(memory)
-                except:
-                    print('Process finished')
+                        ps.terminate()
+                        mem.append(memory)
+            except:
+                pass
         if pipe.poll(timeout=SLEEP_TIME):
-            pipe.recv()
             break
-    pipe.send({MEMORY: mem, STATUS: status})
     pipe.recv()
+    pipe.send({MEMORY: mem, STATUS: status})
+    pipe.close()
+    
+'''
+def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
+    ps = subprocess.Popen(args, stdout=subprocess.PIPE)
+    parent_p, child_p = multiprocessing.Pipe(duplex=True)
+    profiler = multiprocessing.Process(target=profile, args=(child_p, ps.pid, time_limit, memory_limit))    
+    profiler.start()
+    out = None
+    try:
+        out = ps.communicate()[0].decode('utf-8')
+    except:
+        pass #TODO
+    parent_p.send(1)
+    prof_out = parent_p.recv()
+    profiler.join()
+    child_p.close()
+    parent_p.close()
+    return out, prof_out'''
+
 
 def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
     ps = subprocess.Popen(args, stdout=subprocess.PIPE)
@@ -65,15 +81,15 @@ def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
                 status = MEMOUT
                 ps.terminate()
                 break
-            #try:
-            #    ps.communicate(timeout=SLEEP_TIME)[0].decode('utf-8')
-            #except subprocess.TimeoutExpired:
-            #    pass
+            try:
+                out += ps.communicate(timeout=SLEEP_TIME)[0].decode('utf-8')
+            except subprocess.TimeoutExpired:
+                pass
             time.sleep(SLEEP_TIME)
     except Exception as e:
         pass #TODO catch exceptions approprietly
-    if status == FINISH:
-        out = ps.stdout.read().decode('utf-8')
+    #if status == FINISH:
+    #    out = ps.stdout.read().decode('utf-8')
     prof_out = {MEMORY: memory, STATUS: status}
     return out, prof_out
 
@@ -110,4 +126,4 @@ if __name__ == "__main__":
     print(out)
     print('Status:', prof[STATUS])
     if prof[STATUS] == FINISH:
-        print('Maximum memory usage: %.2fMB' % (max(prof[MEMORY]) / 1e6))
+        print('Maximum memory usage: %.2fMB' % (max(prof[MEMORY] + [0.0]) / 1e6))

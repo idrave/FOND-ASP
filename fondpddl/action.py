@@ -59,34 +59,6 @@ class Action:
                 constants = list(map(problem.get_constant, out))
                 yield self.ground(constants)
 
-
-    def valid_ground_actions(self, atoms, problem: Problem):
-        for objects, natoms in self.precondition.possible_grounding(
-                                        self.parameters, [None] * len(self.parameters),
-                                        atoms, [], problem):
-            for i, obj in enumerate(objects):
-                if obj == None:
-                    objects[i] = problem.get_constants(ctype=self.parameters[i].ctype)
-                else:
-                    objects[i] = [obj]
-
-            for objs in get_combinations(objects, [], lambda l, x: l + [x]):
-                valid = True
-                for natom in natoms:
-                    for param in natom.constants:
-                        if not param.is_ground():
-                            param.ground(objs[param.get_pos()]) #TODO check forall
-                    if atoms.is_atom(GroundVar(natom)):
-                        valid = False
-                    for param in natom.constants:
-                        if isinstance(param, Argument):
-                            param.reset()
-                    if not valid:
-                        break
-                if not valid:
-                    continue
-                yield GroundAction(self, objs)
-
     def ground(self, constants: List[Constant]):
         if len(constants) != len(self.parameters):
             raise ValueError((f'Action {self.name} requires {len(self.parameters)}'
@@ -161,11 +133,6 @@ class GroundAction:
         self.__const_ids = (c.id for c in constants)
         #TODO: should check arity and type here?
 
-    def add_id_to_condition(self, id, problem):
-        self.ground()
-        self.action.precondition.add_ground_act(id, problem)
-        self.reset()
-
     def get_const_ids(self):
         return self.__const_ids
 
@@ -176,22 +143,6 @@ class GroundAction:
     def reset(self):
         for param in self.action.parameters:
             param.reset()
-
-    def is_valid(self, state: State, problem: Problem):
-        for param, const in zip(self.action.parameters, self.constants):
-            param.ground(const)
-        value = self.action.precondition.evaluate(state, problem)
-        for param in self.action.parameters:
-            param.reset()
-        return value
-
-    def is_valid_static(self, state: State, problem: problem, positive, negative):
-        for param, const in zip(self.action.parameters, self.constants):
-            param.ground(const)
-        values = self.action.precondition.evaluate_static(state, problem, positive, negative)
-        for param in self.action.parameters:
-            param.reset()
-        return True in values
 
     def get_effects(self, state: State, problem: Problem):
         for param, const in zip(self.action.parameters, self.constants):

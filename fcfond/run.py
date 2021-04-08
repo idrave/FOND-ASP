@@ -61,7 +61,7 @@ def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=N
     for domain, problem in pddl_files:
         res = solve_pddl(Path(problem).stem, domain, problem, planner, str(out_path),
                          BreadthFirstSearch(), timeout, memout, log=log,
-                         n=n, expgoal=expgoal, k=k, threads=threads)
+                         n=n, expand_goal=expgoal, k=k, threads=threads)
         format_results(res)
         results.append(res)
 

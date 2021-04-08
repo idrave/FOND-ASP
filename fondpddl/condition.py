@@ -10,7 +10,7 @@ from fondpddl import Predicate, TypedObject, Argument, ConstType, Constant
 from fondpddl.utils import Index, get_combinations, AtomSet
 from fondpddl.utils.atomdict import AtomDict
 from fondpddl.utils.tokens import PddlIter, PddlTree
-from fondpddl.utils.condition_solve import Conjunction, Disjunction, Negation, VariableSet, AlwaysFalse, AlwaysTrue
+from fondpddl.utils.condition_solve import Conjunction, Disjunction, Negation, VariableSet, AlwaysFalse, AlwaysTrue, EqualitySet
 from typing import List
 import fondpddl.effect
 
@@ -23,31 +23,11 @@ class Precondition(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def evaluate_static(self, state: State, problem: Problem, positive, negative):
-        raise NotImplementedError
-
-    @abstractmethod
     def get_condition(self, state: State, action, problem: Problem, static=None):
         raise NotImplementedError
 
     @abstractmethod
-    def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        raise NotImplementedError
-
-    @abstractmethod
-    def make_false(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        raise NotImplementedError
-
-    @abstractmethod
     def __str__(self):
-        raise NotImplementedError
-
-    @abstractmethod
-    def add_ground_act(self, id, problem: Problem):
-        raise NotImplementedError
-
-    @abstractmethod
-    def get_ground_act(self, state: State, problem: Problem):
         raise NotImplementedError
 
     @abstractstaticmethod
@@ -56,7 +36,8 @@ class Precondition(ABC):
             'and' : And,
             'not' : Not,
             'or': Or, #TODO add disjunctive precondition requirement
-            'forall': ForAll #TODO add universal precondition requirement
+            'forall': ForAll, #TODO add universal precondition requirement
+            '=': Equality
         }
         cond = pddl_tree.iter_elements().get_next()
         if cond == None:
@@ -75,41 +56,16 @@ class Precondition(ABC):
 
 class EmptyCondition(Precondition):
     def __init__(self):
-        self.__ground_acts = set()
         pass
 
     def __str__(self):
         return '()'
-
-    def add_ground_act(self, id, problem: Problem):
-        self.__ground_acts.add(id)
-
-    def get_ground_act(self, state: State, problem: Problem):
-        return self.__ground_acts
 
     def get_condition(self, state: State, problem: Problem, static=None):
         return Conjunction([])
 
     def evaluate(self, state: State, problem: Problem):
         return True
-
-    def evaluate_static(self, state: State, problem: Problem, positive, negative):
-        return (True,)
-
-    def possible_grounding(self, arguments, objects, atoms, neg_vars, problem: Problem):
-        yield objects, neg_vars
-        '''for i in len(range(objects)):
-            if objects[i] == None:
-                if problem.domain.is_typed():
-                    objects[i] = problem.get_constants(arguments[i].ctype)
-                else:
-                    objects[i] = problem.get_constants()
-
-        for comb in get_combinations(objects, [], lambda l,x: l.append(x)):
-            yield comb'''
-
-    def make_false(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        return #TODO is this right?
 
     @staticmethod
     def parse(pddl_tree: PddlTree, objects, predicates, types):
@@ -120,7 +76,6 @@ class EmptyCondition(Precondition):
 class And(Precondition):
     def __init__(self, conditions: List[Precondition]):
         self.conditions = conditions
-        self.__ground_actions = set()
 
     def evaluate(self, state: State, problem: problem):
         for condition in self.conditions:
@@ -128,48 +83,8 @@ class And(Precondition):
                 return False
         return True
 
-    def add_ground_act(self, id, problem: Problem):
-        self.__ground_actions.add(id)
-        for condition in self.conditions:
-            condition.add_ground_act(id, problem)
-
-    def get_ground_act(self, state: State, problem: Problem):
-        ground_acts = set(self.__ground_actions)
-        for condition in self.conditions:
-            if len(ground_acts) == 0:
-                return ground_acts
-            ground_acts = ground_acts.intersection(condition.get_ground_act(state, problem))
-        return ground_acts
-
     def get_condition(self, state: State, action, problem: Problem, static=None):
         return Conjunction([condition.get_condition(state, action, problem, static=static) for condition in self.conditions])
-
-    def evaluate_static(self, state: State, problem: Problem, positive, negative):
-        f = False
-        for condition in self.conditions:
-            cond_vals = condition.evaluate_static(state, problem, positive, negative)
-            if (False in cond_vals):
-                f = True
-                if not (True in cond_vals):
-                    return (False, )
-        return (True, False) if f else (True,)
-
-    def __possible_grounding(self, arguments, objects, atoms, neg_vars, problem: Problem, i):
-        if i == len(self.conditions):
-            yield objects, neg_vars
-            return
-        for g, g_ns in self.conditions[i].possible_grounding(arguments, objects, atoms, neg_vars, problem):
-            for objs, ns in self.__possible_grounding(arguments, g, atoms, g_ns, problem, i+1):
-                yield objs, ns
-
-    def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for objs, ns in self.__possible_grounding(arguments, objects, atoms, neg_vars, problem, 0):
-            yield objs, ns
-
-    def make_false(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for condition in self.conditions:
-            for objs, ns in condition.make_false(arguments, objects, atoms, neg_vars, problem):
-                yield objs, ns
 
     def __str__(self):
         return '(AND ' + ' '.join(map(str, self.conditions)) + ')'
@@ -188,37 +103,12 @@ class And(Precondition):
 class Not(Precondition):
     def __init__(self, condition: Precondition):
         self.condition = condition
-        self.__ground_acts = set()
-
-    def add_ground_act(self, id, problem: Problem):
-        self.__ground_acts.add(id)
-        self.condition.add_ground_act(id, problem)
-
-    def get_ground_act(self, state: State, problem: Problem):
-        return self.__ground_acts.difference(self.condition.get_ground_act(state, problem))
 
     def evaluate(self, state: State, problem: Problem):
         return not self.condition.evaluate(state, problem)
 
-    def evaluate_static(self, state: State, problem: Problem, positive, negative):
-        vals = self.condition.evaluate_static(state, problem, positive, negative)
-        res = []
-        if True in vals:
-            res.append(False)
-        if False in vals:
-            res.append(True)
-        return tuple(res)
-
     def get_condition(self, state: State, action, problem: Problem, static=None):
         return Negation(self.condition.get_condition(state, action, problem, static=static), action, problem)
-
-    def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for objs, ns in self.condition.make_false(arguments, objects, atoms, neg_vars, problem):
-            yield objs, ns
-
-    def make_false(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for objs, ns in self.condition.possible_grounding(arguments, objects, atoms, neg_vars, problem):
-            yield objs, ns
 
     def __str__(self):
         return f'(NOT {str(self.condition)})'
@@ -242,38 +132,8 @@ class Or(Precondition):
                 return True
         return False
 
-    def add_ground_act(self, id, problem: Problem):
-        for condition in self.conditions:
-            condition.add_ground_act(id, problem)
-
-    def get_ground_act(self, state: State, problem: Problem):
-        ground_act = set()
-        for condition in self.conditions:
-            ground_act = ground_act.union(condition.get_ground_act(state, problem))
-        return ground_act
-
     def get_condition(self, state: State, action, problem: Problem, static=None):
         return Disjunction([condition.get_condition(state, action, problem, static=static) for condition in self.conditions])
-
-    def evaluate_static(self, state: State, problem: Problem, positive, negative):
-        t = False
-        for condition in self.conditions:
-            cond_vals = condition.evaluate_static(state, problem, positive, negative)
-            if (True in cond_vals):
-                t = True
-                if not (False in cond_vals):
-                    return (True,)
-        return (True, False) if t else (False,)
-
-    def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for condition in self.conditions:
-            for objs, ns in condition.possible_grounding(arguments, objects, atoms, neg_vars, problem):
-                yield objs, ns
-
-    def make_false(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        conjunction = And([Not(cond) for cond in self.conditions])
-        for objs, ns in conjunction.possible_grounding(arguments, objects, atoms, neg_vars, problem):
-            yield objs, ns
 
     def __str__(self):
         return '(OR ' + ' '.join(map(str, self.conditions)) + ')'
@@ -301,31 +161,9 @@ class Variable(Precondition, fondpddl.effect.Effect):
             if param.ctype != None and not const.ctype.is_subtype(param.ctype):
                 print(const.name, const.ctype.name)
                 raise ValueError(f'Wrong argument type {const.ctype} for {predicate.name}')
-        self.__ground_map = {}
     
     def __str__(self):
         return self.predicate.name+'('+','.join([const.name for const in self.constants])+')'
-
-    def add_ground_act(self, id, problem: Problem):
-        var_id = self.ground(problem).get_id()
-        if var_id not in self.__ground_map:
-            self.__ground_map[var_id] = set()
-        self.__ground_map[var_id].add(id)
-
-    def get_ground_act(self, state: State, problem: Problem):
-        ground_acts = set()
-        check_const = [(i, const) for i, const in enumerate(self.constants) if const.is_ground()]
-        pred_id = self.predicate.get_id()
-        for var_id in state.get_atoms(self.predicate):
-            valid = True
-            for i, const in check_const:
-                gvar = problem.get_variable(pred_id, var_id)
-                if const.get_constant().id != gvar.constants[i].id:
-                    valid = False
-                    break
-            if valid:
-                ground_acts = ground_acts.union(self.__ground_map.get((pred_id, var_id), set()))
-        return ground_acts
 
     def get_condition(self, state: State, action, problem: Problem, static=None):
         if static != None:
@@ -353,48 +191,8 @@ class Variable(Precondition, fondpddl.effect.Effect):
     def evaluate(self, state: State, problem: Problem):
         return state.get_value(self.ground(problem))
 
-    def evaluate_static(self, state, problem, positive, negative):
-        if self.evaluate(state, problem):
-            if self.predicate in negative:
-                return (True, False)
-            else:
-                return (True,)
-        else:
-            if self.predicate in positive:
-                return (True, False)
-            else:
-                return (False,)
-
     def get_effects(self, state: State, problem: Problem):
         yield AtomSet(positive=[problem.get_variable_index(self)])
-
-    def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for values in atoms.get_atoms(self.predicate):
-            objs = list(objects)
-            valid = True
-            for param, obj_id in zip(self.constants, values):
-                obj = problem.get_constant(obj_id)
-                if param.is_act_param(): #TODO
-                    p_pos = param.get_pos()
-                    if param.is_ground() and param.get_constant() != obj or \
-                            objs[p_pos] != None and objs[p_pos] != obj:
-                        valid = False
-                        break
-                    objs[p_pos] = obj #TODO implement get_pos and predicate and object ids :(
-                else:
-                    if param.get_constant() != obj:
-                        valid = False
-                        break
-            if not valid:
-                continue
-            yield objs, neg_vars
-
-    def make_false(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        n_vars = list(neg_vars)
-        params = [(p if not p.is_ground() else p.get_constant()) for p in self.constants] #TODO check if grounded correctly
-        Variable(self.predicate, params)
-        n_vars.append(self)
-        yield objects, n_vars
 
     @staticmethod
     def parse(pddl_tree: PddlTree, objects, predicates, types):
@@ -489,12 +287,6 @@ class ForAll(Precondition):
             self.argument.reset()
         return True
 
-    def add_ground_act(self, id, problem: Problem):
-        for constant in problem.get_constants(ctype=self.argument.ctype):
-            self.argument.ground(constant)
-            self.condition.add_ground_act(id, problem)
-            self.argument.reset()
-
     def get_condition(self, state: State, action, problem: Problem, static=None):
         cond = []
         for constant in problem.get_constants(ctype=self.argument.ctype):
@@ -510,39 +302,6 @@ class ForAll(Precondition):
             ground_acts = ground_acts.union(self.condition.get_ground_act(state, problem))
             self.argument.reset()
         return ground_acts
-
-    def evaluate_static(self, state: State, problem: Problem, positive, negative):
-        f = False
-        for constant in problem.get_constants(ctype=self.argument.ctype):
-            self.argument.ground(constant)
-            cond_vals = self.condition.evaluate_static(state, problem, positive, negative)
-            if (False in cond_vals):
-                f = True
-                if not (True in cond_vals):
-                    return (False, )
-            self.argument.reset()
-        return (True, False) if f else (True,)
-
-    def __possible_grounding(self, arguments, objects, atoms, neg_vars, problem: Problem, i, consts):
-        if i == len(consts):
-            yield objects, neg_vars
-        self.argument.ground(consts[i])
-        for g, g_ns in self.condition.possible_grounding(arguments, objects, atoms, neg_vars, problem):
-            for objs, ns in self.__possible_grounding(arguments, g, atoms, g_ns, problem, i+1, consts):
-                yield objs, ns
-
-    def possible_grounding(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for objs, ns in self.__possible_grounding(arguments, objects, atoms, neg_vars, problem,
-                                    0, problem.get_constants(ctype=self.argument.ctype)):
-            yield objs, ns
-        self.argument.reset()
-
-    def make_false(self, arguments, objects, atoms: AtomDict, neg_vars, problem: Problem):
-        for const in problem.get_constants(ctype=self.argument.ctype):
-            self.argument.ground(const)
-            for objs, ns in self.condition.make_false(arguments, objects, atoms, neg_vars, problem):
-                yield objs, ns
-            self.argument.reset()
 
     def __str__(self):
         return '(FORALL (' + self.argument.name + \
@@ -574,3 +333,40 @@ class ForAll(Precondition):
         condition = Precondition.parse(cond_pddl, objects, predicates, types)
         objects.pop(arg.name)
         return ForAll(arg, condition)
+
+
+class Equality(Precondition):
+    def __init__(self, const1: TypedObject, const2: TypedObject):
+        self.const1 = const1
+        self.const2 = const2
+
+    def evaluate(self, state: State, problem: Problem):
+        if not self.const1.is_ground():
+            raise ValueError(f'Equality: Constant {self.const1.name} is not grounded.')
+        if not self.const2.is_ground():
+            raise ValueError(f'Equality: Constant {self.const2.name} is not grounded.')
+        return self.const1.get_constant() == self.const2.get_constant()
+
+    def get_condition(self, state: State, action, problem: Problem, static=None):
+        return EqualitySet(action, self.const1, self.const2, problem)
+
+    def __str__(self):
+        return "(= %s %s)" % (str(self.const1), str(self.const2))
+
+    @staticmethod
+    def parse(pddl_tree: PddlTree, objects, predicates, types):
+        pddl_iter = pddl_tree.iter_elements()
+        pddl_iter.assert_token('=')
+        params = []
+        for _ in range(2):
+            if pddl_iter.is_next_name():
+                param_name = pddl_iter.get_name()
+            else:
+                param_name = pddl_iter.get_param()
+            param = objects.get(param_name, None)
+            if param == None:
+                raise ValueError(f'Unknown constant/argument {param_name}')
+            params.append(param)
+        pddl_iter.assert_end()
+        return Equality(*params)
+        

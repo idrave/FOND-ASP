@@ -53,7 +53,6 @@ def main():
     if args.pddl != None:
         assert len(args.pddl) % 2 == 0, "Must have an even number of pddl files"
         pddls = [args.pddl[i:i+2] for i in range(0,len(args.pddl),2)]
-        print(pddls)
         run_pddl(pddls, args.timeout, args.memout,
                     args.out, log=args.log,
                     n=args.n, planner=planner, expgoal=args.expgoal,

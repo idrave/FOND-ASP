@@ -13,6 +13,9 @@ def edge_1(node_1, node_2):
 def tlabel_2(node_1, node_2, label):
     return clingo.Function('tlabel', [clingo.Function('', [node_1, node_2]), label])
 
+def labelname_2(action, label):
+    return clingo.Function('labelname', [action, label])
+
 def action_1(action):
     return clingo.Function('action', [action])
 
@@ -27,7 +30,6 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
                             logdict=None):
     state_index = Index()
     action_index = Index()
-
     for state in iterator.iterate(problem, expand_goal=expand_goal):
         state_index.get_index(state)
         print('state ', len(state_index), end='\r')
@@ -60,7 +62,7 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
     return
 
 def clingo_problem_graph(problem: Problem, iterator: GraphIterator,
-                            expand_goal=True, ids=True, log=False,
+                            expand_goal=True, ids=False, log=False,
                             logdict=None):
     state_index = Index()
     action_index = Index()
@@ -80,9 +82,9 @@ def clingo_problem_graph(problem: Problem, iterator: GraphIterator,
             yield tlabel_2(st, child, action_index.get_index(action.action.name))
         if ids:
             yield id_2(node_1(state.string(problem)), state_index.get_index(state))
-    if ids:
-        for action in action_index:
-            yield id_2(action_1(action), action_index.get_index(action))
+    
+    for action in action_index:
+        yield labelname_2(action_index.get_index(action), action)
 
     if log:
         print('States:')

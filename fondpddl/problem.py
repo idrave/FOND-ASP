@@ -65,37 +65,6 @@ class Problem:
         id = self.var_index[variable.predicate.get_id()].get_index(variable)
         return id
 
-    def ground_actions(self) -> Generator[GroundAction, None, None]:
-        for action in self.domain.actions:
-            valid_params = []
-            for param in action.parameters:
-                valid_params.append(self.get_constants(param.ctype))
-            for params in get_combinations(valid_params, [], lambda l,x: l + [x]):
-                ground_act = action.ground(params)
-                assert isinstance(ground_act, GroundAction)
-                yield ground_act
-
-    '''def get_pos_neg_preds(self):
-        
-        Returns predicates for which some action's effect might change a ground atom
-        of such predicate to true or to false.
-        
-        return self.__positive, self.__negative'''
-
-    def possible_ground_actions(self):
-        ground_actions = []
-        positive = set()
-        negative = set()
-        for action in self.domain.actions:
-            pos, neg = action.effect.get_predicates()
-            positive.update(pos)
-            negative.update(neg)
-        for gact in self.ground_actions():
-            for s0 in self.get_initial_states():
-                if gact.is_valid_static(s0, self, positive, negative):
-                    ground_actions.append(gact)
-        return ground_actions
-
     def get_initial_states(self) -> Iterator[State]:
         init = AndEffect(self.init)
         for effects, _ in init.ground(self).get_effects(self, StaticAtomDict()):
@@ -110,18 +79,6 @@ class Problem:
         for positive, negative in action.get_effects(state, self):
             st = state.change_values(positive, negative)
             yield st
-    '''
-    def apply_action(self, atomdict, action: GroundAction)-> Iterator[State]:
-        for positive, negative in action.get_effects(state, self):
-            pos = positive.difference(negate)
-            pos = pos.difference(atomdict)
-            neg = negate.difference(positive)
-            neg = neg.intersection(atomdict)
-            atomdict.join_update(pos)
-            atomdict.difference_update(neg)
-            yield atomdict
-            atomdict.difference_update(pos)
-            atomdict.join_update(neg)'''
 
     def is_goal(self, state: State)->bool:
         return self.goal.evaluate(state, self)
@@ -257,26 +214,6 @@ class Problem:
         goal = Precondition.parse(pddl_iter.get_group(), objects, predicates, types)
         pddl_iter.assert_end()
         problem_params[PROBLEM_GOAL] = goal
-
-    '''@staticmethod
-    def parse_fair(pddl_tree: PddlTree, domain: Domain, problem_params):
-        if PROBLEM_FAIR in problem_params:
-            raise ValueError('Redefinition of fair action set')
-        pddl_iter = pddl_tree.iter_elements()
-        pddl_iter.assert_token(':fair')
-        g_actions = []
-        actions = domain.actions
-        objects = problem_params.get(PROBLEM_OBJ,[]) + domain.constants
-        while pddl_iter.has_next():
-            action = GroundAction.parse(pddl_iter.get_group(), actions, objects)
-            if PROBLEM_FAIR in problem_params:
-                constraints = problem_params[PROBLEM_FAIR]
-                if any(action in a+b for a, b in constraints):
-                    raise ValueError(f'Action {str(action)} already has different fariness type')
-            g_actions.append(action)
-        if PROBLEM_FAIR not in problem_params:
-            problem_params[PROBLEM_FAIR] = []
-        problem_params[PROBLEM_FAIR].append((g_actions, []))'''
 
     @staticmethod
     def parse_constraint(pddl_tree: PddlTree, domain: Domain, problem_params):

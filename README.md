@@ -312,7 +312,9 @@ Where `EXPERIMENTS` is one or more available experiments for the planner. Some a
   - `swamp`
 - `foot`
   - `footXX`, for an odd `XX` from `03` to `21`
-- seq`uential`
+- `sequential`
+- `sequential`
+- `sequential`
   - `sequentialXX`, for `XX` from `02` to `10`
 - `nested`
   - `nestedXX`, for `XX` from `02` to `10`
@@ -322,7 +324,7 @@ Where `EXPERIMENTS` is one or more available experiments for the planner. Some a
 To get a list of more available experiments type
 
 ```bash
-$ python -m fcfond.main -list LIST
+$ python -m fcfond.main -list [LIST]
 ```
 
 Where `LIST` can be one of the experiment lists above.

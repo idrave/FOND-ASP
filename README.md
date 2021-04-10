@@ -18,6 +18,7 @@ The FOND-ASP is written in Answer Set Programming (ASP) using [ASP Clingo system
     - [Specialized solvers for standard FOND planning](#specialized-solvers-for-standard-fond-planning)
     - [Running against an ASP encoding](#running-against-an-asp-encoding)
   - [Running the experiments](#running-the-experiments)
+  - [Solvers available](#solvers-available)
 
 ## Setup
 
@@ -343,5 +344,43 @@ Where `LIST` can be one of the experiment lists above.
 The results will be left under folder `OUTPUT` and will include:
 
 * `stdout.txt`: file containing the standard output given by Clingo solver when run over the domains. This shows the resulting policy, among other types of information.
-* `metrics.csv`: contains a summary of several performance metrics
-* `.lp` files with Clingo symbols corresponding to the input domains
+* `metrics.csv`: contains a summary of several performance metrics.
+* `.lp` files with Clingo symbols corresponding to the input domains.
+
+Here is an example running the QNP problems:
+
+```shell
+$ python -m fcfond.main qnp     
+qnp
+['clear_qnp', 'on_qnp', 'gripper_qnp', 'delivery_qnp']
+clear_qnp
+Pddl processed
+['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/fondplus.lp'), 'output/qnp/all/proc_clear.lp', '-n', '1', '-t', '1']
+Status:  Finished
+on_qnp
+Pddl processed
+['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/fondplus.lp'), 'output/qnp/all/proc_on.lp', '-n', '1', '-t', '1']
+Status:  Finished
+gripper_qnp
+Pddl processed
+['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/fondplus.lp'), 'output/qnp/all/proc_gripper.lp', '-n', '1', '-t', '1']
+Status:  Finished
+delivery_qnp
+Pddl processed
+['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/fondplus.lp'), 'output/qnp/all/proc_delivery.lp', '-n', '1', '-t', '1']
+Status:  Finished
+```
+
+## Solvers available
+
+The **default FOND+ solver** is provided in a few variants depending on how the results are displayed:
+
+* `fcfond/planner_clingo/fondplus.lp`: default solver; prints the `policy/2` fraction of the model.
+* `fcfond/planner_clingo/fondplus_noshow.lp`: like `fondplus.lp` but not showing anything.
+* `fcfond/planner_clingo/fondplus_show.lp`: like `fondplus.lp` but grounding the showing part independently and after solving the main program. Seems to sometime run faster.
+* `fcfond/planner_clingo/fondplus_show_pretty.lp`: like `fondplus.lp` but showing the policy in a pretty manner as rules `S ==> A`.
+
+The specialized solvers for **standard FOND planning** are:
+
+* `fcfond/planner_clingo/specialized/planner_strong.lp`: specialized solver for pure strong planning under adversarial semantics for non-determinism.
+* `fcfond/planner_clingo/specialized/planner_strongcyclic.lp`: specialized solver for pure strong planning under state-action fair semantics for non-determinism.

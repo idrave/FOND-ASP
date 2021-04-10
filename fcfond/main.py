@@ -10,14 +10,14 @@ def parse_args():
     parser.add_argument('-list', nargs='?', const='', default=None,
                         help='Display contents of a list of experiments. If none specified, show a list of options.')
     parser.add_argument('-pddl', nargs='+', default=None,
-                        help='PDDL files on which to run planner [as domain,problem pairs]')
+                        help='PDDL files on which to run planner [as domain-problem pairs in sequence]')
     parser.add_argument('-clingo', nargs='+', default=None,
                         help='Clingo files on which to run planner')
     parser.add_argument('-out', default=None, help='Output folder')
     parser.add_argument('-log', action='store_true',
                         help='Print additional information')
     parser.add_argument('--fondf', action='store_true',
-                        help='Use default FOND+ planner for all experiments')
+                        help='Use default FOND+ planner with conditional fairness')
     parser.add_argument('-planner', default=None,
                         help='Use Clingo encoding for planner in specified path')
     parser.add_argument('--strong', action='store_true',
@@ -50,6 +50,7 @@ def main():
         planner = StrongCyclicPlanner.FILE
     else:
         planner = args.planner
+
     if args.pddl != None:
         assert len(args.pddl) % 2 == 0, "Must have an even number of pddl files"
         pddls = [args.pddl[i:i+2] for i in range(0,len(args.pddl),2)]

@@ -245,8 +245,13 @@ $ python -m fcfond.main --strongcyclic -pddl fcfond/domains/pddl/fond-sat/beam-w
 
 **NOTE:** Observe that we can solve standard FOND planning problems using the default FOND+ solver (`fcfond/planner_clingo/fondplus.lp`):
 
-* For pure strong planning, one just uses the original PDDL files with no `(:fairness :a ... b: ...)` clauses so that every non-determinism is assumed of adversarial type.
-* For pure strong-cyclic planning, one needs to extend the original PDDL domain file to include corresponding fairness constraints for each non-deterministic ground action `a` of the form `[A={a},B=empty]`. This means one `(:fairness :a GROUND_ACTION)` for each _ground_ action in the problem needs to be included.
+* For _pure strong planning_, one just uses the original PDDL files with no `(:fairness :a ... b: ...)` clauses so that every non-determinism is assumed of adversarial type. So, for example, the following will produce a strong plan solution:
+
+  ```shell
+  python -m fcfond.main -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p01.pddl
+  ```
+
+* For _pure strong-cyclic planning_, one needs to extend the original PDDL domain file to include corresponding fairness constraints for each non-deterministic ground action `a` of the form `[A={a},B=empty]`. This means one `(:fairness :a GROUND_ACTION)` for each _ground_ action in the problem needs to be included.
 
 ### Running against an ASP encoding
 

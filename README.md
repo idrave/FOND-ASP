@@ -11,7 +11,9 @@ The FOND-ASP is written in Answer Set Programming (ASP) using [ASP Clingo system
 - [FOND-ASP: FOND+ via ASP](#fond-asp-fond-via-asp)
   - [Setup](#setup)
     - [Using a Python Pipenv environment](#using-a-python-pipenv-environment)
-  - [PDDL specification of FOND+ problems](#pddl-specification-of-fond-problems)
+  - [PDDL and ASP specifications of FOND+ problems](#pddl-and-asp-specifications-of-fond-problems)
+    - [PDDL specifications](#pddl-specifications)
+    - [ASP Encoding](#asp-encoding)
   - [Running the FOND-ASP planning system](#running-the-fond-asp-planning-system)
     - [Specialized solvers for standard FOND planning](#specialized-solvers-for-standard-fond-planning)
     - [Running against an ASP encoding](#running-against-an-asp-encoding)
@@ -74,11 +76,13 @@ $ cp -a ~/.local/lib/python3.8/site-packages/clingo  ~/.local/share/virtualenvs/
 
 Now `clingo` is part of the Pipenv environment, and all is ready to run.
 
-## PDDL specification of FOND+ problems
+## PDDL and ASP specifications of FOND+ problems
 
-The planning system uses the usual PDDL format for domain and problem specification. However, the PDDL is extended to allow the specification of  conditional fairness.
+### PDDL specifications
 
-A fairness expression allow to define PDDL problems with _custom_ fairness assumptions for the FOND-ASP planner and has the form:
+To specify a FOND+ task, the PDDL is extended to allow the specification of  conditional fairness.
+
+A **fairness expression** allow to define PDDL problems with _custom_ fairness assumptions for the FOND-ASP planner and has the form:
 
 ```pddl
 ((:fairness :a ...  :b ...)
@@ -128,6 +132,28 @@ To specify fairness constraints where `B` is empty, the `:b` section is fully om
            (go-down p2 p3 down))
 ```
 
+### ASP Encoding
+
+It is also possible to specify a FOND+ problem directly in ASP format, by means of a set of facts using the following distinguished atoms:
+
+* `state(S)`: `S` is a state
+* `initialState(S)`: `S` is the initial state
+* `goal(S)`: `S` is a goal state
+* `action(A)`: `A` is an action
+* `transition(S1, A, S2)`: there is a transition from state `S1` to state `S2` applying action `A`
+* `con_A(A, I)`: action `A` belongs to set of constraints `A_I`
+* `con_B(A, I)`: action `A` belongs to set of constraints `B_I`
+
+Inf act, when the system receives (extended) PDDL files, the problem is first translated to an ASP encoding using the above atoms.
+
+The **output of a solver** should be atoms `policy(S, A)` specifying the action `A` to be applied in state `S`. In our sample experiments, the states and actions are represented as integers. To make the output more human readable, one can include the following rule in our program:
+
+```asp
+#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).
+```
+
+Where `id/2` symbols are generating automatically by the PDDL parser to describe the states and actions assigned to each integer ID.
+
 ## Running the FOND-ASP planning system
 
 To see all options available run:
@@ -154,7 +180,7 @@ This will use the default FOND+ solver implemented in `fcfond/planner_clingo/fon
 
 * `proc_p01.lp`: the full planning problem encoded as a set of ASP facts; see below for atoms used.
 * `stdout.txt`: the standard output of the ASP solver, which shows a successful policy, if any has been found, via atoms `policy(S, A)` specifying the action `A` to be applied in state `S`.
-* `metrics.csv`: the statistic of the solving task (e.g., time, no of models, etc.). 
+* `metrics.csv`: the statistic of the solving task (e.g., time, no of models, etc.).
 
 To change the default output folder, use `-out` option.
 
@@ -169,26 +195,6 @@ python -m fcfond.main DOMAIN PROBLEM -planner PLANNER
 where `PLANNER` is the `.lp` file containing the Clingo planner to be used.
 
 Two specialized solvers are provided for strong and strong-cyclic planning; [see below](#specialized-solvers-for-standard-fond-planning).
-
-In general, an ASP solver would expect a problem specified via a set of facts using following atoms:
-
-* `state(S)`: `S` is a state
-* `initialState(S)`: `S` is the initial state
-* `goal(S)`: `S` is a goal state
-* `action(A)`: `A` is an action
-* `transition(S1, A, S2)`: there is a transition from state `S1` to state `S2` applying action `A`
-* `con_A(A, I)`: action `A` belongs to set of constraints `A_I`
-* `con_B(A, I)`: action `A` belongs to set of constraints `B_I`
-
-When the system receives PDDL files, the problem is first translated to an ASP encoding using the above atoms.
-
-The **output of a solver** should be atoms `policy(S, A)` specifying the action `A` to be applied in state `S`. In our sample experiments, the states and actions are represented as integers. To make the output more human readable, one can include the following rule in our program:
-
-```asp
-#show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).
-```
-
-Where `id/2` symbols are generating automatically by the PDDL parser to describe the states and actions assigned to each integer ID.
 
 ### Specialized solvers for standard FOND planning
 

@@ -1,5 +1,5 @@
 from fcfond.experiments.names import *
-from fcfond.planner import FairnessNoIndex
+import fcfond.planner
 from fondpddl.algorithm import BreadthFirstSearch
 from fcfond.names import *
 from fcfond.experiments.names import *

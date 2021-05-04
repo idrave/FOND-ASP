@@ -2,7 +2,7 @@ from pathlib import Path
 from fondpddl import encode_clingo_problem
 from fondpddl.algorithm import BreadthFirstSearch
 from fcfond.run import solve_pddl, solve_clingo, format_results
-from fcfond.planner import FairnessNoIndex, DualFondQnpPlanner, StrongCyclicPlanner
+import fcfond.planner
 from fcfond.experiments.utils import add_pddl_experiment, add_experiment_list
 import pandas as pd
 
@@ -11,7 +11,6 @@ from fcfond.names import STDOUT, PROBLEM
 import fcfond.experiments.qnp
 import fcfond.experiments.ltl
 import fcfond.experiments.fondsat
-from fcfond.planner import FairnessNoIndex
 
 def list_experiments(name):
     experiments = get_experiments()
@@ -47,22 +46,22 @@ def get_experiments():
                    **fcfond.experiments.fondsat.get_experiments()}
     add_pddl_experiment(experiments, 'foot3x2', 'foot3x2', PDDL_DOM_PATHS/'foot3x2_d.pddl',
                         PDDL_DOM_PATHS/'foot3x2_p.pddl', DEFAULT_OUT/'foot3x2',
-                        FairnessNoIndex)
+                        fcfond.planner.FONDPLUS)
     add_pddl_experiment(experiments, 'foot3x2_unfair_01', 'foot3x2_unfair_01', PDDL_DOM_PATHS/'foot3x2_d.pddl',
                         PDDL_DOM_PATHS/'foot3x2_unfair_01.pddl', DEFAULT_OUT/'foot3x2_unfair_01',
-                        FairnessNoIndex)
+                        fcfond.planner.FONDPLUS)
     football = {}
     football_sc = {}
     for i in range(3, 22, 2):
         istr = str(i).zfill(2)
         add_pddl_experiment(football, 'foot%s'%(istr), 'foot%s'%(istr), PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
                         PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s'%(istr)),
-                        FairnessNoIndex)
+                        fcfond.planner.FONDPLUS)
     for i in range(5, 81, 5):
         istr = str(i).zfill(2)
         add_pddl_experiment(football_sc, 'foot%s_cyclic'%(istr), 'foot%s_cyclic'%(istr), PDDL_DOM_PATHS/'football'/'footballnx2.pddl',
                         PDDL_DOM_PATHS/'football'/('p%s.pddl'%(istr)), DEFAULT_OUT/'football'/('foot%s_cyclic'%(istr)),
-                        StrongCyclicPlanner)
+                        fcfond.planner.STRONGCYCLIC)
     add_experiment_list(football, 'foot', 'foot', list(football.keys()), DEFAULT_OUT/'football'/'all')
     add_experiment_list(football_sc, 'foot_cyclic', 'foot_cyclic', list(football_sc.keys()), DEFAULT_OUT/'football'/'all_cyclic')
     experiments.update(**football)
@@ -127,7 +126,7 @@ def run_experiment(name, experiments, output, timelimit,
             results.append(result)
         return experiment[CALLBACK](experiment, results)
 
-    planner = planner if planner != None else experiment[PLANNER].FILE
+    planner = planner if planner != None else experiment[PLANNER]
     if experiment[ENCODING] == CLINGO:
         results = solve_clingo(
                     experiment[PROB_NAME], experiment[CLINGO_PROBLEM],

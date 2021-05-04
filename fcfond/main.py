@@ -1,7 +1,7 @@
 import argparse
 from fcfond.experiments import run_experiments, list_experiments
 from fcfond.run import run_pddl, run_clingo
-from fcfond.planner import FairnessNoIndex, StrongPlanner, StrongCyclicPlanner
+import fcfond.planner
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -16,17 +16,27 @@ def parse_args():
     parser.add_argument('-out', default=None, help='Output folder')
     parser.add_argument('-log', action='store_true',
                         help='Print additional information')
-    parser.add_argument('--fondf', action='store_true',
-                        help='Use default FOND+ planner with conditional fairness')
-    parser.add_argument('-planner', default=None,
+    group_planner = parser.add_mutually_exclusive_group()
+    group_planner.add_argument('-planner', default=None, dest='planner',
                         help='Use Clingo encoding for planner in specified path')
-    parser.add_argument('--strong', action='store_true',
+    group_planner.add_argument('--fondp', action='store_const', const=fcfond.planner.FONDPLUS, dest='planner',
+                        help='Use default FOND+ planner with conditional fairness')
+    group_planner.add_argument('--fondpshow', action='store_const', const=fcfond.planner.FONDPSHOW, dest='planner',
+                        help='Use default FOND+ planner with simple show statements')
+    group_planner.add_argument('--fondpnoshow', action='store_const', const=fcfond.planner.FONDPNOSHOW, dest='planner',
+                        help='Use default FOND+ planner without show statements')
+    group_planner.add_argument('--strong', action='store_const', const=fcfond.planner.STRONG, dest='planner',
                         help='Use Clingo specialized planner for pure strong planning')
-    parser.add_argument('--strongcyclic', action='store_true',
+    group_planner.add_argument('--strongcyclic', action='store_const', const=fcfond.planner.STRONGCYCLIC, dest='planner',
                         help='Use Clingo specialized planner for pure strong cyclic planning')
+    group_planner.add_argument('--dual', action='store_const', const=fcfond.planner.DUAL, dest='planner',
+                        help='Use Clingo specialized planner for DualFOND planning')
+    group_planner.add_argument('--index', action='store_const', const=fcfond.planner.INDEX, dest='planner',
+                        help='Use Clingo specialized planner for DualFOND planning')
+    parser.add_argument('-k', type=int, default=3,
+                        help='Index limit for planner with option --index (default: %(default)s)')
     parser.add_argument('--expgoal', action='store_true',
                         help='Whether to expand goal states in pddl translation')
-    parser.add_argument('-k', nargs='?', const='3', default=None)
     parser.add_argument('-n', type=int, default=1,
                         help='Number of clingo models; 0 to return all (default: %(default)s)')
     parser.add_argument('-t', type=int, default=1, help='Number of threads')
@@ -34,7 +44,10 @@ def parse_args():
                         help='Timeout for each experiment (default: %(default)s)')
     parser.add_argument('-memout', type=float, default=8e9,
                         help='Memory limit for each experiment (default: %(default)s)')
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.planner != fcfond.planner.INDEX:
+        args.k = None
+    return args
 
 
 def main():
@@ -42,15 +55,9 @@ def main():
     if args.list != None:
         list_experiments(args.list)
         return
-    if args.fondf:
-        planner = FairnessNoIndex.FILE
-    elif args.strong:
-        planner = StrongPlanner.FILE
-    elif args.strongcyclic:
-        planner = StrongCyclicPlanner.FILE
-    else:
-        planner = args.planner
 
+    planner = args.planner
+    print('planner',planner)
     if args.pddl != None:
         assert len(args.pddl) % 2 == 0, "Must have an even number of pddl files"
         pddls = [args.pddl[i:i+2] for i in range(0,len(args.pddl),2)]

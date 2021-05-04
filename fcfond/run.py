@@ -1,9 +1,8 @@
 from fcfond.experiments.names import OUTPUT
 from fcfond.profile import run_profile, parse_clingo_out, MAXMEM, MEMORY
-from fcfond.planner import FairnessNoIndex
 from fondpddl.algorithm import BreadthFirstSearch
 from fondpddl import encode_clingo_problem
-from fcfond.planner import Planner
+import fcfond.planner
 import argparse
 import psutil
 from pathlib import Path
@@ -23,7 +22,7 @@ def process_output(output, profile):
     parsed_out[MAXMEM] = max(profile[MEMORY]+[0]) / 1e6
     return parsed_out
 
-def solve_pddl(name, domain_file, problem_file, planner: Planner,
+def solve_pddl(name, domain_file, problem_file, planner,
                 output_dir, iterator, timelimit, memlimit, expand_goal=False, log=False, **kwargs):
     start = time.time()
     logs = {PROBLEM: name}
@@ -47,7 +46,7 @@ def solve_pddl(name, domain_file, problem_file, planner: Planner,
     domain_file = processed
     logs[PREPROCESS] = time.time() - start
     print('Pddl processed')
-    output, profile = FairnessNoIndex().solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
+    output, profile = fcfond.planner.solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
     logs[STDOUT] = output
     return logs
@@ -79,20 +78,10 @@ def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=N
     with open(str(out_path/'stdout.txt'), 'w') as fp:
         fp.write(stdout)
 
-def solve_clingo(name, domain_file, planner: Planner, output_dir,
-                 timelimit, memlimit, pre_process=False, **kwargs):
+def solve_clingo(name, domain_file, planner, output_dir,
+                 timelimit, memlimit, **kwargs):
     logs = {PROBLEM: name}
-    if pre_process:
-        symbols = planner.relevant_symbols(domain_file, logdict=logs) #TODO change this (?)
-        processed = str(Path(output_dir)/('proc_'+ name +'.lp'))
-        with open(processed, 'w') as fp:
-            for symbol in symbols:
-                fp.write(str(symbol)+'.\n')
-        domain_file = processed
-        print('Preprocessing done')
-    else:
-        logs[PREPROCESS] = 0
-    output, profile = FairnessNoIndex().solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
+    output, profile = fcfond.planner.solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
     logs[STDOUT] = output
     return logs

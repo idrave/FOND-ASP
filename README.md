@@ -254,6 +254,14 @@ $ python -m fcfond.main --strongcyclic -pddl fcfond/domains/pddl/fond-sat/beam-w
 
 * For _pure strong-cyclic planning_, one needs to extend the original PDDL domain file to include corresponding fairness constraints for each non-deterministic ground action `a` of the form `[A={a},B=empty]`. This means one `(:fairness :a GROUND_ACTION)` for each _ground_ action in the problem needs to be included.
 
+We also provide a specialized planner for Dual-FOND planning combining fair and adversarial actions as in strong cyclic and strong planning respectively.
+
+* `fcfond/planner_clingo/specialized/dualfond.lp`: this is a conditional planner for Dual-FOND problems, where some actions are adversarial and others are fair in all states. It can be used via option `--dual`. The fair actions must be indicated in the PDDL description of the problem using `(:fairness :a GROUND_ACTION)` clauses. Any action not appearing in any such clause will be assumed to be adversarial.
+
+### Alternative version of FOND-ASP planner
+
+We also provide an alternative version of the base FOND-ASP planner in `fcfond/planner_clingo/fondp_index.lp`, which uses a bound on the recursive procedure searching for terminating states. Such bound can be specified using command line option `-k N` passing some positive integer value. This planner may not find a valid policy if the bound is too low for the problem being solved.
+
 ### Running against an ASP encoding
 
 While the above examples make use of PDDL specifications (as domain and problem `.pddl` files), it is also possible to directly specify a problem encoded via a collection of ASP facts (see above) above using option `--clingo`.
@@ -380,7 +388,14 @@ The **default FOND+ solver** is provided in a few variants depending on how the 
 * `fcfond/planner_clingo/fondplus_show.lp`: like `fondplus.lp` but grounding the showing part independently and after solving the main program. Seems to sometime run faster.
 * `fcfond/planner_clingo/fondplus_show_pretty.lp`: like `fondplus.lp` but showing the policy in a pretty manner as rules `S ==> A`.
 
+The variation of the solver using a bound on the recursive search for terminating states is:
+* `fcfond/planner_clingo/fondp_index.lp`: version of the complete FOND-ASP planner that takes bound `k` on the grounding of the program.
+
 The specialized solvers for **standard FOND planning** are:
 
 * `fcfond/planner_clingo/specialized/planner_strong.lp`: specialized solver for pure strong planning under adversarial semantics for non-determinism.
 * `fcfond/planner_clingo/specialized/planner_strongcyclic.lp`: specialized solver for pure strong planning under state-action fair semantics for non-determinism.
+
+The specialized solver for **dual FOND planning** is:
+
+* `fcfond/planner_clingo/specialized/dualfond.lp`: specialized solver for FOND problems with combinations of fair and adversarial non-deterministim.

@@ -1,10 +1,11 @@
 import psutil
-import multiprocessing
+import threading, queue
 import subprocess
 import re
 import sys
 import time
 import argparse
+import resource
 from fcfond.names import *
 
 SLEEP_TIME=.001
@@ -14,83 +15,55 @@ TIMEOUT = 'Timeout'
 MEMOUT = 'Memory out'
 FINISH = 'Finished'
 
-def profile(pipe, pid, time_limit, memory_limit):
+def mem_profile(q, pid):
     try:
         ps = psutil.Process(pid=pid)
     except:
         ps = None
-    mem = []
-    start = time.time()
-    status = FINISH
+    memory = 0.0
 
-    while True:
-        if ps != None and not ps.is_running():
-            try:
-                if time.time() - start > time_limit:
-                    status = TIMEOUT
-                    ps.terminate()
-                else:
-                    memory = ps.memory_info().rss
-                    if memory > memory_limit:
-                        status = MEMOUT
-                        ps.terminate()
-                        mem.append(memory)
-            except:
-                pass
-        if pipe.poll(timeout=SLEEP_TIME):
-            break
-    pipe.recv()
-    pipe.send({MEMORY: mem, STATUS: status})
-    pipe.close()
-    
-'''
-def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
-    ps = subprocess.Popen(args, stdout=subprocess.PIPE)
-    parent_p, child_p = multiprocessing.Pipe(duplex=True)
-    profiler = multiprocessing.Process(target=profile, args=(child_p, ps.pid, time_limit, memory_limit))    
-    profiler.start()
-    out = None
-    try:
-        out = ps.communicate()[0].decode('utf-8')
-    except:
-        pass #TODO
-    parent_p.send(1)
-    prof_out = parent_p.recv()
-    profiler.join()
-    child_p.close()
-    parent_p.close()
-    return out, prof_out'''
+    while ps != None and ps.is_running():
+        try:
+            memory = max(memory,ps.memory_info().rss)
+        except:
+            pass
+        time.sleep(SLEEP_TIME)
+    q.put(memory)
 
+def get_subprocess_memory():
+    cinfo = resource.getrusage(resource.RUSAGE_CHILDREN)
+    return cinfo.ru_maxrss
 
-def run_profile(args, profile=profile, time_limit=3600.0, memory_limit=4e9):
-    ps = subprocess.Popen(args, stdout=subprocess.PIPE)
-    proc = psutil.Process(pid=ps.pid)
-    memory = []
-    start = time.time()
+def limit_process_memory(bytes):
+    resource.setrlimit(resource.RLIMIT_AS, (bytes, bytes))
+
+def run_profile(args, time_limit=3600.0, memory_limit=4e9):
+    ps = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=(lambda:limit_process_memory(memory_limit)))
+    q = queue.Queue()
+    t = threading.Thread(target=mem_profile,args=[q,ps.pid])
+    t.start()
     status = FINISH
     out = ''
     try:
-        while proc.is_running():
-            if time.time() - start > time_limit:
-                status = TIMEOUT
-                ps.terminate()
-                break
-            mem = proc.memory_info().rss
-            memory.append(proc.memory_info().rss)
-            if mem > memory_limit:
-                status = MEMOUT
-                ps.terminate()
-                break
-            try:
-                out += ps.communicate(timeout=SLEEP_TIME)[0].decode('utf-8')
-            except subprocess.TimeoutExpired:
-                pass
-            time.sleep(SLEEP_TIME)
+        out, err = ps.communicate(timeout=time_limit)
+        out = out.decode('utf-8')
+        err = err.decode('utf-8')
+        if err.find("MemoryError: std::bad_alloc")!=-1:
+            status = MEMOUT
+    except subprocess.TimeoutExpired:
+        ps.send_signal(signal.SIGINT)
+        try:
+            out = ps.communicate(timeout=1.0)[0].decode('utf-8')
+        except:
+            ps.kill()
+        status = TIMEOUT
     except Exception as e:
-        pass #TODO catch exceptions approprietly
-    #if status == FINISH:
-    #    out = ps.stdout.read().decode('utf-8')
-    prof_out = {MEMORY: memory, STATUS: status}
+        print(e)
+        pass
+    print(status)
+    mem = q.get()
+    t.join()
+    prof_out = {MEMORY: mem, STATUS: status}
     return out, prof_out
 
 def is_sat(string):
@@ -112,8 +85,12 @@ def parse_clingo_out(output):
         (SAT, is_sat), (MODELS, None), (CALLS, int), (TIME, float),
         (SOLVING, float), (MODEL1st, float), (TIMEUNSAT, float), (CPUTIME, float)]
     results = {}
+    vals = match.groups() if match != None else [None] * len(keys_calls)
     for (key, call), value in zip(keys_calls, match.groups()):
-        results[key] = call(value) if call != None else value
+        if value == None:
+            results[key] = None
+        else:
+            results[key] = call(value) if call != None else value
     return results
 
 if __name__ == "__main__":

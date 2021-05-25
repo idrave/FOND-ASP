@@ -19,12 +19,12 @@ def process_output(output, profile):
         parsed_out[RESULT] = parsed_out[SAT]
     else:
         parsed_out = {RESULT: profile[STATUS]}
-    parsed_out[MAXMEM] = max(profile[MEMORY]+[0]) / 1e6
+    parsed_out[MAXMEM] = profile[MEMORY] / 1e6
     return parsed_out
 
 def solve_pddl(name, domain_file, problem_file, planner,
                 output_dir, iterator, timelimit, memlimit, expand_goal=False, log=False, **kwargs):
-    start = time.time()
+    start = time.process_time()
     logs = {PROBLEM: name}
     symbols = encode_clingo_problem(
                         domain_file, problem_file, iterator=iterator,
@@ -34,7 +34,7 @@ def solve_pddl(name, domain_file, problem_file, planner,
     with open(processed, 'w') as fp:
         for i, symbol in enumerate(symbols):
             if i % 500 == 0:
-                if time.time()-start > timelimit:
+                if time.process_time()-start > timelimit:
                     logs[RESULT] = TIMEOUT
                     logs[STDOUT] = f'{name}: Pre precessing timeout\n'
                     return logs
@@ -44,7 +44,7 @@ def solve_pddl(name, domain_file, problem_file, planner,
                     return logs
             fp.write(str(symbol)+'.\n')
     domain_file = processed
-    logs[PREPROCESS] = time.time() - start
+    logs[PREPROCESS] = time.process_time() - start
     print('Pddl processed')
     output, profile = fcfond.planner.solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))

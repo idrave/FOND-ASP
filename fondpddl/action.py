@@ -174,17 +174,18 @@ class GroundAction:
 
     def encode_clingo(self, problem: Problem, action_index: Index):
         symbols = []
-        index = action_index.get_index(self)
+        index = clingo.Number(action_index.get_index(self))
         symbols.append(clingo.Function('action', [index]))
+
         const_a, const_b = problem.get_fair_constraints(self)
         for constraint in const_a:
-            symbols.append(clingo.Function('con_A', [index, constraint]))
+            symbols.append(clingo.Function('con_A', [index, clingo.Number(constraint)]))
         for constraint in const_b:
-            symbols.append(clingo.Function('con_B', [index, constraint]))
+            symbols.append(clingo.Function('con_B', [index, clingo.Number(constraint)]))
         return symbols
 
     def id_clingo(self, action_index):
-        return clingo.Function('id', [clingo.Function('action',[str(self)]), action_index.get_index(self)])
+        return clingo.Function('id', [clingo.Function('action',[clingo.String(str(self))]), clingo.Number(action_index.get_index(self))])
 
     @staticmethod
     def parse(pddl_tree: PddlTree, actions: List[Action], objects: List[Constant]):

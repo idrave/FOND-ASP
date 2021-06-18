@@ -52,12 +52,12 @@ def parse_args():
 
 def main():
     args = parse_args()
+    print(args)
     if args.list != None:
         list_experiments(args.list)
         return
 
     planner = args.planner
-    print('planner',planner)
     if args.pddl != None:
         assert len(args.pddl) % 2 == 0, "Must have an even number of pddl files"
         pddls = [args.pddl[i:i+2] for i in range(0,len(args.pddl),2)]

@@ -9,7 +9,7 @@ plan(State, Action) :- policy(IdS, IdA), id(state(State), IdS), id(action(Action
 #show plan/2.
 
 
-#script(python).
+#script(python)
 import re
 
 def report_model(m):

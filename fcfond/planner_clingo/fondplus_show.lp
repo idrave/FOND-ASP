@@ -10,7 +10,7 @@
 #include "fondplus_core.lp".
 
 
-#script(python).
+#script(python)
 def main(prg):
     prg.ground([('base', []),('solucionar', [])])
     prg.solve() # first solving with no show

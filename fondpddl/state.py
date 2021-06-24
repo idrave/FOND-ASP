@@ -55,7 +55,8 @@ class State:
         print(self.string(problem))
 
     def encode_clingo(self, state_names, action_names):
-        name = state_names.get_index(self)
+        name = clingo.Number(state_names.get_index(self))
+
         symbols = [clingo.Function('state', [name])]
         if self.is_init:
             symbols.append(clingo.Function('initialState', [name]))
@@ -67,11 +68,11 @@ class State:
         for action, states in self.transitions:
             for s in states:
                 symbols.append(clingo.Function('transition',
-                                [name, action_names.get_index(action), state_names.get_index(s)]))
+                                [name, clingo.Number(action_names.get_index(action)), clingo.Number(state_names.get_index(s))]))
         return symbols
 
     def id_clingo(self, state_index, problem):
-        return clingo.Function('id',[clingo.Function('state',[self.string(problem)]), state_index.get_index(self)])
+        return clingo.Function('id', [clingo.Function('state', [clingo.String(self.string(problem))]), clingo.Number(state_index.get_index(self))])
 
     def set_expanded(self):
         self.expanded = True

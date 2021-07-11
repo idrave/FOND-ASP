@@ -53,10 +53,27 @@ def solve_pddl(name, domain_file, problem_file, planner,
 
 def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=None,
                     expgoal=False, k=None, threads=1):
+    """Run a collection of FOND planning problems
+
+    Args:
+        pddl_files (list): list of [domain file, problem file] lists for each planning task to solve
+        timeout (float):  seconds to allow per problem
+        memout (float): amount of memory to allow per task
+        output (str, optional): folder to store results. Defaults to None.
+        log (bool, optional): [description]. Defaults to False.
+        n (int, optional): [description]. Defaults to 1.
+        planner (str, optional): particular planner to use. Defaults to None.
+        expgoal (bool, optional): [description]. Defaults to False.
+        k ([type], optional): [description]. Defaults to None.
+        threads (int, optional): number of threads to use. Defaults to 1.
+    """
+    # set output result folder
     out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
     results = []
+
+    # solve each task in the list and collect all results
     for domain, problem in pddl_files:
         res = solve_pddl(Path(problem).stem, domain, problem, planner, str(out_path),
                          BreadthFirstSearch(), timeout, memout, log=log,

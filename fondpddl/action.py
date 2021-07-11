@@ -21,6 +21,15 @@ class Action:
         self.effect = effect
 
     def get_ground(self, state: State, problem: Problem):
+        """Ground the action ....
+
+        Args:
+            state (State): [description]
+            problem (Problem): [description]
+
+        Yields:
+            [type]: [description]
+        """
         if len(self.parameters) == 0:
             if self.precondition.evaluate(state, problem):
                 yield self.ground([])
@@ -41,7 +50,7 @@ class Action:
                 for c in consts:
                     for out in recursive(pos+1, b, vals+[c]):
                         yield out
-        
+
         for out in recursive(0, None, []):
             if any(o is None for o in out):
                 for i, o in enumerate(out):

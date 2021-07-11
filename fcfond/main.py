@@ -59,7 +59,9 @@ def main():
 
     planner = args.planner
     if args.pddl != None:
-        assert len(args.pddl) % 2 == 0, "Must have an even number of pddl files"
+        assert len(args.pddl) % 2 == 0, "Must have an even number of PDDL files"
+
+        # collect list of pairs lists [domain, problem]
         pddls = [args.pddl[i:i+2] for i in range(0,len(args.pddl),2)]
         run_pddl(pddls, args.timeout, args.memout,
                     args.out, log=args.log,

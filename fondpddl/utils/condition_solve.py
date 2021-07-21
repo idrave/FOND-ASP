@@ -123,28 +123,25 @@ class BasicSet(ConstantSelect):
 
 
 class VariableSet(BasicSet):
-    def __init__(self, action,
-                       variable,
-                       state,
-                       problem):
-        check_const = [(i, const.get_constant()) for i, const in enumerate(variable.constants) if const.is_ground()]
+    def __init__(self, action, variable, state, problem):
+        check_const = [(i, const.get_constant()) for i, const in enumerate(variable.constants) if const.is_ground()] # get constants in variable arguments
         constants = []
         pos = {const.get_pos() for const in variable.constants if const.is_act_param()}
-        for var_id in state.get_atoms(variable.predicate):
-            valid = True
+        for var_id in state.get_atoms(variable.predicate): # get ground atoms true in state from predicate
             gvar = problem.get_variable(variable.predicate.get_id(), var_id)
-            gvar_constants = gvar.get_const_ids()
-            for i, const in check_const:
-                if const.id != gvar_constants[i]:
+            gvar_constants = gvar.constants                
+            l = [None] * len(action.parameters)
+            valid = True
+            for arg, const in zip(variable.constants, gvar_constants):
+                if arg.is_ground() and arg.get_id() != const.get_id():
                     valid = False
                     break
-            if valid:
-                l = [None] * len(action.parameters)
-                for const, id in zip(variable.constants, gvar_constants):
-                    if const.is_act_param():
-                        assert isinstance(const, fondpddl.argument.ActionParam)
-                        l[const.get_pos()] = id
-                constants.append(tuple(l))
+                if arg.is_act_param():
+                    if not const.has_type(arg.ctype):
+                        valid = False
+                        break
+                    l[arg.get_pos()] = const.get_id()
+            if valid: constants.append(tuple(l))
         constants.sort()
         super().__init__(pos, constants)
 

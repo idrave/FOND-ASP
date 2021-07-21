@@ -72,7 +72,7 @@ class Problem:
 
     def valid_actions(self, state: State) -> Iterator[GroundAction]:
         for action in self.__prob_actions:
-            for gaction in action.get_ground(state, self):
+            for gaction in action.get_applicable(state, self):
                 yield gaction
 
     def apply_action(self, state: State, action: GroundAction)-> Iterator[State]:

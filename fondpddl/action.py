@@ -20,7 +20,7 @@ class Action:
         self.precondition = precondition
         self.effect = effect
 
-    def get_ground(self, state: State, problem: Problem):
+    def get_applicable(self, state: State, problem: Problem):
         if len(self.parameters) == 0:
             if self.precondition.evaluate(state, problem):
                 yield self.ground([])
@@ -65,7 +65,8 @@ class Action:
                               f' parameters, received {len(constants)}'))
         for arg, const in zip(self.parameters, constants):
             if arg.ctype != None and not const.has_type(arg.ctype):
-                return None #TODO might raise some unexpected behavior
+                raise ValueError((f'Action {self.name} parameter {arg.name} has type {arg.ctype},'
+                              f' but received {const.name} of type {const.ctype}'))
         return GroundAction(self, constants)
 
     def __str__(self):
@@ -116,8 +117,8 @@ class ProblemAction:
             valid_params.append(self.__problem.get_constants(param.ctype))
         self.__valid_params = valid_params
 
-    def get_ground(self, state: State, problem: Problem):
-        for ground_action in self.__action.get_ground(state, problem):
+    def get_applicable(self, state: State, problem: Problem):
+        for ground_action in self.__action.get_applicable(state, problem):
             g = self.__ground.get(ground_action.get_const_ids(), None)
             if g == None:
                 self.__ground[ground_action.get_const_ids()] = ground_action

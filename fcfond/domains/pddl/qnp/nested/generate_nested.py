@@ -1,6 +1,6 @@
 from fcfond.experiments.qnp import QNP_DOM_PATHS
 
-for i in range(2, 11):
+for i in range(2, 11):tiempos
     istr = str(i).zfill(2)
     domain_str = '(define (domain nestedqnp%s)\n' % (istr)
     domain_str += '\t(:predicates %s (p))\n' % (' '.join('(gr0_%d)' % (j+1) for j in range(i)))

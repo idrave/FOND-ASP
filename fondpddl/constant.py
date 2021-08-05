@@ -13,6 +13,7 @@ class TypedObject(ABC):
         return self.name
 
     def has_type(self, ctype: ConstType):
+        if self.ctype == None: return True # Untyped domain
         return self.ctype.is_subtype(ctype)
 
     def is_act_param(self):
@@ -77,3 +78,18 @@ def parse_objects(pddl_iter: PddlIter, const_index:Index, types=None):
             if const_index.find_index(const) != None:
                 raise ValueError(f'Duplicate constant {name}')
             const.set_id(const_index.get_index(const))
+
+def parse_const_list(pddl_iter: PddlIter, consts):
+    params = []
+    while pddl_iter.has_next():
+        if pddl_iter.is_next_name():
+            param_name = pddl_iter.get_name()
+        elif pddl_iter.is_next_param():
+            param_name = pddl_iter.get_param()
+        else:
+            raise ValueError(f'Unexpected {pddl_iter.get_next()} in argument list')
+        param = consts.get(param_name, None)
+        if param == None:
+            raise ValueError(f'Unknown constant/argument {param_name}')
+        params.append(param)
+    return params

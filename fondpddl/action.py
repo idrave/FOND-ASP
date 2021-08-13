@@ -4,11 +4,12 @@ if typing.TYPE_CHECKING:
     from fondpddl import State, Problem
 from fondpddl.condition import Precondition, EmptyCondition, GroundVar
 from fondpddl.effect import Effect, EmptyEffect
-from fondpddl.utils.tokens import PddlIter, PddlTree
-from fondpddl.utils import Index, get_combinations, find_combination
-from fondpddl.argument import parse_parameters
+from fondpddl.utils.tokens import PddlTree
+from fondpddl.utils import Index, get_combinations
+from fondpddl.argument import parse_parameters, TypedObject
+from fondpddl.constant import parse_const_list
 from fondpddl import Argument, Constant, Predicate, ConstType, ActionParam
-from typing import List
+from typing import List, Dict
 import clingo
 
 
@@ -19,6 +20,15 @@ class Action:
         self.parameters = parameters
         self.precondition = precondition
         self.effect = effect
+
+    def validate_args(self, args: List[TypedObject]):
+        if len(args) != len(self.parameters):
+            raise ValueError((f'Action {self.name} requires {len(self.parameters)}'
+                              f' parameters, received {len(constants)}'))
+        for p, arg in zip(self.parameters, args):
+            if p.ctype != None and not arg.has_type(p.ctype):
+                raise ValueError((f'Action {self.name} parameter {p.name} has type {p.ctype},'
+                              f' but received {arg.name} of type {arg.ctype}'))
 
     def get_applicable(self, state: State, problem: Problem):
         if len(self.parameters) == 0:
@@ -50,23 +60,12 @@ class Action:
                     else:
                         out[i] = [problem.get_constant(o)]
                 for comb in get_combinations(out, [], lambda a, b: a+[b]):
-                    if len(set(comb)) < len(comb): # TODO: check for repeated parameters in another way
-                        continue
                     yield self.ground(comb)
             else:
-                if len(set(out)) < len(out): # TODO: check for repeated parameters in another way
-                    continue
                 constants = list(map(problem.get_constant, out))
                 yield self.ground(constants)
 
     def ground(self, constants: List[Constant]):
-        if len(constants) != len(self.parameters):
-            raise ValueError((f'Action {self.name} requires {len(self.parameters)}'
-                              f' parameters, received {len(constants)}'))
-        for arg, const in zip(self.parameters, constants):
-            if arg.ctype != None and not const.has_type(arg.ctype):
-                raise ValueError((f'Action {self.name} parameter {arg.name} has type {arg.ctype},'
-                              f' but received {const.name} of type {const.ctype}'))
         return GroundAction(self, constants)
 
     def __str__(self):
@@ -107,15 +106,10 @@ class Action:
         effects = effects if effects != None else EmptyEffect()
         return Action(action_name, params, preconditions, effects)
 
-class ProblemAction:
+class ProblemAction: #TODO possibly remove this (?)
     def __init__(self, action: Action, problem: Problem):
         self.__action = action
-        self.__problem = problem
         self.__ground = {}
-        valid_params = []
-        for param in self.__action.parameters:
-            valid_params.append(self.__problem.get_constants(param.ctype))
-        self.__valid_params = valid_params
 
     def get_applicable(self, state: State, problem: Problem):
         for ground_action in self.__action.get_applicable(state, problem):
@@ -128,11 +122,11 @@ class ProblemAction:
 
 class GroundAction:
     def __init__(self, action: Action, constants: List[Constant]):
+        action.validate_args(constants)
         self.action = action
         self.constants = constants
         self.__effect = None
         self.__const_ids = (c.id for c in constants)
-        #TODO: should check arity and type here?
 
     def get_const_ids(self):
         return self.__const_ids
@@ -188,22 +182,13 @@ class GroundAction:
     def id_clingo(self, action_index):
         return clingo.Function('id', [clingo.Function('action',[clingo.String(str(self))]), clingo.Number(action_index.get_index(self))])
 
-    @staticmethod
-    def parse(pddl_tree: PddlTree, actions: List[Action], objects: List[Constant]):
-        pddl_iter = pddl_tree.iter_elements()
-        actions = {action.name: action for action in actions}
-        objects = {obj.name: obj for obj in objects}
-        name = pddl_iter.get_name()
-        action = actions.get(name, None)
-        if action == None:
-            raise ValueError(f'Unknown action {name}')
-        args = []
-        while pddl_iter.has_next():
-            arg_name = pddl_iter.get_name()
-            arg = objects.get(arg_name, None)
-            if arg == None:
-                raise ValueError(f'Unknown constant/argument {arg_name}')
-            args.append(arg)
-            if len(args) > len(action.parameters):
-                raise ValueError(f'Too many arguments for predicate {name}')
-        return GroundAction(action, args)
+def parse_action_w_args(pddl_tree: PddlTree, actions: Dict, objects: Dict):
+    it = pddl_tree.iter_elements()
+    actname = it.get_name()
+    action = actions.get(actname, None)
+    if action == None: raise ValueError('Unknown action name {actname}')
+    args = parse_const_list(it, objects)
+    if len(args) != len(action.parameters):
+        raise ValueError((f'Action {action.name} requires {len(action.parameters)}'
+                            f' parameters, received {len(args)}'))
+    return action, args

@@ -5,8 +5,7 @@ from fondpddl.constant import parse_objects
 from fondpddl.argument import parse_parameters
 from fondpddl.action import Action
 from typing import List, Optional
-import typing
-import re
+
 
 class Requirements:
     def __init__(self, requirements):
@@ -33,6 +32,7 @@ DOMAIN_CONST = 'constants'
 DOMAIN_PRED = 'predicates'
 DOMAIN_ACT = 'actions'
 DOMAIN_TYP = 'types'
+IS_TYPE_SET = 'istypeset'
 
 class Domain:
     def __init__(self, name: str, requirements: Requirements, constants: List[Constant],
@@ -113,7 +113,7 @@ class Domain:
     def parse_tokens(pddl_tree: PddlTree):
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token('define')
-        domain_params = {}
+        domain_params = {IS_TYPE_SET: False}
         name = Domain.parse_name(pddl_iter.get_group())
         domain_params[DOMAIN_NAME] = name
         while pddl_iter.has_next():
@@ -157,15 +157,20 @@ class Domain:
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':requirements')
         domain_params[DOMAIN_REQ] = Requirements.parse_requirements(pddl_iter)
+        if domain_params[DOMAIN_REQ].has_typing():
+            domain_params[DOMAIN_TYP] = [ConstType('object')]
+        else:
+            domain_params[DOMAIN_TYP] = None
 
     @staticmethod
     def parse_types(pddl_tree: PddlTree, domain_params):
-        #TODO check requirement
-        if DOMAIN_TYP in domain_params:
-            raise ValueError('Redefinition of types')
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':types')
-        types = {'object': ConstType('object')}
+        if not domain_params[DOMAIN_REQ].has_typing():
+            raise ValueError(':typing requirement missing using types')
+        if domain_params[IS_TYPE_SET]:
+            raise ValueError('Redefinition of types')
+        types = {t.name:t for t in domain_params[DOMAIN_TYP]}
         typed_list = parse_typed_list(pddl_iter)
         for type_l, super_type_name in typed_list:
             super_type = types.get(super_type_name, None)
@@ -176,6 +181,7 @@ class Domain:
                     raise ValueError(f'Duplicate type {name}')
                 types[name] = ConstType(name, super_type)
         domain_params[DOMAIN_TYP] = list(types.values())
+        domain_params[IS_TYPE_SET] = True
 
     @staticmethod
     def parse_constants(pddl_tree: PddlTree, domain_params):

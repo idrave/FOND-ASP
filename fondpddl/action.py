@@ -182,6 +182,26 @@ class GroundAction:
     def id_clingo(self, action_index):
         return clingo.Function('id', [clingo.Function('action',[clingo.String(str(self))]), clingo.Number(action_index.get_index(self))])
 
+    @staticmethod
+    def parse(pddl_tree: PddlTree, actions: List[Action], objects: List[Constant]):
+        pddl_iter = pddl_tree.iter_elements()
+        actions = {action.name: action for action in actions}
+        objects = {obj.name: obj for obj in objects}
+        name = pddl_iter.get_name()
+        action = actions.get(name, None)
+        if action == None:
+            raise ValueError(f'Unknown action {name}')
+        args = []
+        while pddl_iter.has_next():
+            arg_name = pddl_iter.get_name()
+            arg = objects.get(arg_name, None)
+            if arg == None:
+                raise ValueError(f'Unknown constant/argument {arg_name}')
+            args.append(arg)
+            if len(args) > len(action.parameters):
+                raise ValueError(f'Too many arguments for predicate {name}')
+        return GroundAction(action, args)
+
 def parse_action_w_args(pddl_tree: PddlTree, actions: Dict, objects: Dict):
     it = pddl_tree.iter_elements()
     actname = it.get_name()

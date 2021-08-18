@@ -45,9 +45,11 @@ def solve_pddl(name, domain_file, problem_file, planner,
             fp.write(str(symbol)+'.\n')
     domain_file = processed
     logs[PREPROCESS] = time.process_time() - start
-    print('Pddl processed')
+    print('Pddl processed. Start ASP solver.')
     output, profile = fcfond.planner.solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
+    print("ASP Solved. Processing output")
     logs.update(process_output(output, profile))
+    print("Output processed.")
     logs[STDOUT] = output
     return logs
 

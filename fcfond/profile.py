@@ -2,7 +2,7 @@ import psutil
 import threading, queue
 import subprocess
 import re
-import sys
+import signal
 import time
 import argparse
 import resource
@@ -15,21 +15,6 @@ TIMEOUT = 'Timeout'
 MEMOUT = 'Memory out'
 FINISH = 'Finished'
 
-def mem_profile(q, pid):
-    try:
-        ps = psutil.Process(pid=pid)
-    except:
-        ps = None
-    memory = 0.0
-
-    while ps != None and ps.is_running():
-        try:
-            memory = max(memory,ps.memory_info().rss)
-        except:
-            pass
-        time.sleep(SLEEP_TIME)
-    q.put(memory)
-
 def get_subprocess_memory():
     cinfo = resource.getrusage(resource.RUSAGE_CHILDREN)
     return cinfo.ru_maxrss
@@ -39,57 +24,53 @@ def limit_process_memory(bytes):
 
 def run_profile(args, time_limit=3600.0, memory_limit=4e9):
     ps = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=(lambda:limit_process_memory(memory_limit)))
-    q = queue.Queue()
-    t = threading.Thread(target=mem_profile,args=[q,ps.pid])
-    t.start()
     status = FINISH
     out = ''
+    err = ''
     try:
-        out, err = ps.communicate(timeout=time_limit)
-        out = out.decode('utf-8')
-        err = err.decode('utf-8')
-        if err.find("MemoryError: std::bad_alloc")!=-1:
-            status = MEMOUT
+        out, err = ps.communicate(timeout=time_limit)[0].decode('utf-8')
     except subprocess.TimeoutExpired:
         ps.send_signal(signal.SIGINT)
         try:
-            out = ps.communicate(timeout=1.0)[0].decode('utf-8')
+            out, err = ps.communicate(timeout=1.0)[0].decode('utf-8')
         except:
             ps.kill()
         status = TIMEOUT
-    except Exception as e:
-        print(e)
+    except:
         pass
-    print(status)
-    mem = q.get()
-    t.join()
-    prof_out = {MEMORY: mem, STATUS: status}
-    return out, prof_out
+    if err.find('MemoryError: bad_alloc') == -1: status = MEMOUT
+    prof_out = {MEMORY: get_subprocess_memory()/1e6, STATUS: status}
+    return out+err, prof_out
 
-def is_sat(string):
-    if string == 'SATISFIABLE':
-        return True
-    if string == 'UNSATISFIABLE':
-        return False
-    return None
-
-def parse_clingo_out(output):
+def parse_clingo_out(output, firstmodel=False):
+    results = {}
     empty = r'\s.*?'
-    sat = '(SATISFIABLE|UNSATISFIABLE)\n\n'
+    answer = r'Answer: \d+?\n(.*?)\n'
+    matches = re.finditer(answer, output)
+    models = list(matches)
+    if len(models):
+        results[SAT] = True
+    else:
+        if output.find('UNSATISFIABLE') > -1:
+            results[SAT] = False
+        else:
+            results[SAT] = None
+
     models = f'Models{empty}: (.*?)\n'
     calls = f'Calls{empty}: (.*?)\n'
     time = f'Time{empty}: (.*?)s '+r'\(Solving: (.*?)s 1st Model: (.*?)s Unsat: (.*?)s\)\n'
     cputime = f'CPU Time{empty}: (.*?)s\n'
-    match = re.search(sat + models + calls + time + cputime, output)
     keys_calls = [
-        (SAT, is_sat), (MODELS, None), (CALLS, int), (TIME, float),
-        (SOLVING, float), (MODEL1st, float), (TIMEUNSAT, float), (CPUTIME, float)]
-    results = {}
-    vals = match.groups() if match != None else [None] * len(keys_calls)
-    for (key, call), value in zip(keys_calls, match.groups()):
-        if value == None:
-            results[key] = None
-        else:
+        (models, [(MODELS, None)]),
+        (calls, [(CALLS, int)]),
+        (time, [(TIME, float), (SOLVING, float), (MODEL1st, float), (TIMEUNSAT, float)]),
+        (cputime, [(CPUTIME, float)])]
+    
+    for regex, groups in keys_calls:
+        match = re.search(regex, output)
+        if match == None:
+            continue
+        for (key, call), value in zip(groups, match.groups()):
             results[key] = call(value) if call != None else value
     return results
 

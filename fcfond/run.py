@@ -13,10 +13,12 @@ import pandas as pd
 from fcfond.names import *
 
 def process_output(output, profile):
-    print('Status: ', profile[STATUS])
     if profile[STATUS] == FINISH:
         parsed_out = parse_clingo_out(output)
-        parsed_out[RESULT] = parsed_out[SAT]
+        if parsed_out[SAT] == None:
+            parsed_out[RESULT] = MEMOUT
+        else:
+            parsed_out[RESULT] = parsed_out[SAT]
     else:
         parsed_out = {RESULT: profile[STATUS]}
     parsed_out[MAXMEM] = profile[MEMORY] / 1e6
@@ -49,6 +51,7 @@ def solve_pddl(name, domain_file, problem_file, planner,
     output, profile = fcfond.planner.solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
     print("ASP Solved. Processing output")
     logs.update(process_output(output, profile))
+    print('Result (SAT):', logs[RESULT])
     print("Output processed.")
     logs[STDOUT] = output
     return logs
@@ -85,6 +88,7 @@ def solve_clingo(name, domain_file, planner, output_dir,
     logs = {PROBLEM: name}
     output, profile = fcfond.planner.solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
+    print('Result (SAT):', logs[RESULT])
     logs[STDOUT] = output
     return logs
 

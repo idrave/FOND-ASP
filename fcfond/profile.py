@@ -25,20 +25,23 @@ def limit_process_memory(bytes):
 def run_profile(args, time_limit=3600.0, memory_limit=4e9):
     ps = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=(lambda:limit_process_memory(memory_limit)))
     status = FINISH
-    out = ''
-    err = ''
+    out = None
+    err = None
     try:
-        out, err = ps.communicate(timeout=time_limit)[0].decode('utf-8')
+        out, err = ps.communicate(timeout=time_limit)
     except subprocess.TimeoutExpired:
         ps.send_signal(signal.SIGINT)
         try:
-            out, err = ps.communicate(timeout=1.0)[0].decode('utf-8')
+            out, err = ps.communicate(timeout=1.0)
         except:
             ps.kill()
         status = TIMEOUT
-    except:
+    except Exception as e:
+        print(e)
         pass
-    if err.find('MemoryError: bad_alloc') == -1: status = MEMOUT
+    out = out.decode('utf-8') if out != None else ''
+    err = err.decode('utf-8') if out != None else ''
+    if err.find('MemoryError: bad_alloc') != -1: status = MEMOUT
     prof_out = {MEMORY: get_subprocess_memory()/1e6, STATUS: status}
     return out+err, prof_out
 

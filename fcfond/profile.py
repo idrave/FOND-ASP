@@ -40,7 +40,7 @@ def run_profile(args, time_limit=3600.0, memory_limit=4e9):
         print(e)
         pass
     out = out.decode('utf-8') if out != None else ''
-    err = err.decode('utf-8') if out != None else ''
+    err = err.decode('utf-8') if err != None else ''
     prof_out = {MEMORY: get_subprocess_memory()/1e6, STATUS: status}
     return out+err, prof_out
 

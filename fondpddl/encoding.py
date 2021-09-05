@@ -26,13 +26,14 @@ def root_1(node):
     return clingo.Function('root', [node])
 
 def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
-                            expand_goal=True, ids=True, log=False,
+                            expand_goal=True, ids=True, log=False, track=False,
                             logdict=None):
     state_index = Index()
     action_index = Index()
     for state in iterator.iterate(problem, expand_goal=expand_goal):
         state_index.get_index(state)
-        print('state ', len(state_index), end='\r')
+        if track:
+            print('state ', len(state_index), end='\r')
         for action, children in state.transitions:
             action_index.get_index(action)
             for child in children:

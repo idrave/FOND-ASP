@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('-out', default=None, help='Output folder')
     parser.add_argument('-log', action='store_true',
                         help='Print additional information')
+    parser.add_argument('-notrack', action='store_true', help='Do not track state counting when encoding')
     parser.add_argument('-stats', action='store_true',
                         help='Print stats information')
     group_planner = parser.add_mutually_exclusive_group()
@@ -64,7 +65,7 @@ def main():
         assert len(args.pddl) % 2 == 0, "Must have an even number of pddl files"
         pddls = [args.pddl[i:i+2] for i in range(0,len(args.pddl),2)]
         run_pddl(pddls, args.timeout, args.memout,
-                    args.out, log=args.log, stats=args.stats,
+                    args.out, log=args.log, track=not args.notrack, stats=args.stats,
                     n=args.n, planner=planner, expgoal=args.expgoal,
                     k=args.k, threads=args.t)
     if args.clingo != None:

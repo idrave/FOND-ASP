@@ -337,6 +337,7 @@ Calls        : 1
 Time         : 0.007s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
 CPU Time     : 0.007s
 ```
+
 ## Running the experiments
 
 To run the built-in set of experiments using the `FOND-ASP` planner for FOND+ dual problems use:

@@ -25,12 +25,12 @@ def process_output(output, profile):
     return parsed_out
 
 def solve_pddl(name, domain_file, problem_file, planner,
-                output_dir, iterator, timelimit, memlimit, expand_goal=False, log=False, **kwargs):
+                output_dir, iterator, timelimit, memlimit, expand_goal=False, log=False, track=True, **kwargs):
     start = time.process_time()
     logs = {PROBLEM: name}
     symbols = encode_clingo_problem(
                         domain_file, problem_file, iterator=iterator,
-                        expand_goal=expand_goal, log=log, logdict=logs)
+                        expand_goal=expand_goal, log=log, logdict=logs, track=track)
     processed = str(Path(output_dir)/('proc_' + name + '.lp'))
     process = psutil.Process(os.getpid())
     with open(processed, 'w') as fp:
@@ -56,7 +56,7 @@ def solve_pddl(name, domain_file, problem_file, planner,
     logs[STDOUT] = output
     return logs
 
-def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=None,
+def run_pddl(pddl_files, timeout, memout, output=None, log=False, track=True, stats=True, n=1, planner=None,
                     expgoal=False, k=None, threads=1):
     out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
@@ -64,7 +64,7 @@ def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=N
     results = []
     for domain, problem in pddl_files:
         res = solve_pddl(Path(problem).stem, domain, problem, planner, str(out_path),
-                         BreadthFirstSearch(), timeout, memout, log=log,
+                         BreadthFirstSearch(), timeout, memout, log=log, track=track,
                          n=n, expand_goal=expgoal, k=k, threads=threads)
         format_results(res)
         results.append(res)
@@ -78,7 +78,10 @@ def run_pddl(pddl_files, timeout, memout, output=None, log=False, n=1, planner=N
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
     df.to_csv(str(out_path/'metrics.csv'),index=False)
 
-    if log:
+    if stats or log:
+        for col in df.columns:
+            print(f"{col}: {df.iloc[0][col]}")
+        print()
         print(df)
     with open(str(out_path/'stdout.txt'), 'w') as fp:
         fp.write(stdout)
@@ -92,8 +95,7 @@ def solve_clingo(name, domain_file, planner, output_dir,
     logs[STDOUT] = output
     return logs
 
-def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=False,
-                n=1, planner=None, k=None, threads=1):
+def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=False, stats=True, n=1, planner=None, k=None, threads=1):
     
     out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
@@ -115,7 +117,10 @@ def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=Fal
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
     df.to_csv(str(out_path/'metrics.csv'),index=False)
 
-    if log:
+    if stats or log:
+        for col in df.columns:
+            print(f"{col}: {df.iloc[0][col]}")
+        print()
         print(df)
     with open(str(out_path/'stdout.txt'), 'w') as fp:
         fp.write(stdout)

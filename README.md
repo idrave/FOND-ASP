@@ -229,6 +229,7 @@ Several solvers are provided in this distribution:
    * `fcfond/planner_clingo/specialized/dualfond.lp`: specialized solver for FOND problems with combinations of fair and adversarial non-determinism.
 
 Below, we provide more details about standard and dual FOND solvers.
+
 ## Specialized solvers for standard and dual FOND planning
 
 The benchmark from the FOND-SAT planning system are included in this repo under [fcfond/domains/pddl/fond-sat/](fcfond/domains/pddl/fond-sat).
@@ -254,6 +255,7 @@ For example:
 ```shell
 $ python -m fcfond.main --strong -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p01.pddl
 ```
+
 ### Pure Strong-cyclic under state-fair semantics
 
 Similarly, to solve a FOND problem using the specialized planner for _**pure strong-cyclic**_ planning (state-action fairness) semantics:

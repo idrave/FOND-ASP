@@ -3,6 +3,8 @@ from fcfond.experiments import run_experiments, list_experiments
 from fcfond.run import run_pddl, run_clingo
 import fcfond.planner
 
+import re
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('experiments', nargs='*',
@@ -44,10 +46,27 @@ def parse_args():
                         help='Number of clingo models; 0 to return all (default: %(default)s)')
     parser.add_argument('-t', type=int, default=1, help='Number of threads')
     parser.add_argument('-timeout', type=float, default=1800.0,
-                        help='Timeout for each experiment (default: %(default)s)')
-    parser.add_argument('-memout', type=float, default=8e9,
-                        help='Memory limit for each experiment (default: %(default)s)')
+                        help='Timeout for each experiment in seconds (default: %(default)s)')
+    parser.add_argument('-memout', type=str, default="8G",
+                        help='Memory limit for each experiment in bytes (suffix M/G for Megabytes/Gigabytes) (default: %(default)s)')
     args = parser.parse_args()
+
+    # process args.memout in case it is given human notation xxG or xxM
+    try:
+        mem = float(args.memout)    # memout is just bytes
+    except: # memout must have an M or G
+        try:
+            search_mem = re.search("(.*?)([GM])", args.memout) 
+            mem = float(search_mem.group(1))
+            if search_mem.group(2) == "G":
+                mem = mem * 1000000000
+            elif search_mem.group(2) == "M":
+                mem = mem * 1000000
+        except Exception as e:
+            print("Problem with memory specification. Use float with optional M and G suffix: ", e)
+            exit(1)
+    args.memout = mem  
+
     if args.planner != fcfond.planner.INDEX:
         args.k = None
     return args

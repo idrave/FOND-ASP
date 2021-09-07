@@ -1,13 +1,11 @@
 from fcfond.experiments.names import OUTPUT
-from fcfond.profile import run_profile, parse_clingo_out, MAXMEM, MEMORY
+from fcfond.profile import parse_clingo_out, MAXMEM, MEMORY
 from fondpddl.algorithm import BreadthFirstSearch
 from fondpddl import encode_clingo_problem
 import fcfond.planner
-import argparse
 import psutil
 from pathlib import Path
 import os
-import clingo
 import time
 import pandas as pd
 from fcfond.names import *
@@ -16,7 +14,7 @@ def process_output(output, profile):
     if profile[STATUS] == FINISH:
         parsed_out = parse_clingo_out(output)
         if parsed_out[SAT] == None:
-            parsed_out[RESULT] = MEMOUT
+            parsed_out[RESULT] = UNKNOWN
         else:
             parsed_out[RESULT] = parsed_out[SAT]
     else:

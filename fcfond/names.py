@@ -21,6 +21,7 @@ STATUS = 'Status'
 TIMEOUT = 'Timeout'
 MEMOUT = 'Memory out'
 FINISH = 'Finished'
+UNKNOWN = 'Unknown'
 
 SAT_N = 'Sat count'
 UNSAT_N = 'Unsat count'

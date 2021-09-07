@@ -1,15 +1,9 @@
-import psutil
-import threading, queue
 import subprocess
 import re
 import signal
-import time
 import argparse
 import resource
 from fcfond.names import *
-
-SLEEP_TIME=.001
-a = []
 
 TIMEOUT = 'Timeout'
 MEMOUT = 'Memory out'
@@ -22,7 +16,12 @@ def get_subprocess_memory():
 def limit_process_memory(bytes):
     resource.setrlimit(resource.RLIMIT_AS, (bytes, bytes))
 
-def run_profile(args, time_limit=3600.0, memory_limit=4e9):
+def is_bad_alloc(err):
+    if err.find('*** ERROR: (clingo): std::bad_alloc') != -1: return True
+    if err.find('MemoryError: bad_alloc') != -1: return True
+    return False
+
+def run_profile(args, time_limit=1800.0, memory_limit=8e9):
     ps = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, preexec_fn=(lambda:limit_process_memory(memory_limit)))
     status = FINISH
     out = None
@@ -41,7 +40,9 @@ def run_profile(args, time_limit=3600.0, memory_limit=4e9):
         pass
     out = out.decode('utf-8') if out != None else ''
     err = err.decode('utf-8') if err != None else ''
-    prof_out = {MEMORY: get_subprocess_memory()/1e6, STATUS: status}
+    if status == FINISH and is_bad_alloc(err):
+        status = MEMOUT
+    prof_out = {MEMORY: get_subprocess_memory(), STATUS: status}
     return out+err, prof_out
 
 def parse_clingo_out(output, firstmodel=False):

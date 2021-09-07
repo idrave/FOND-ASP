@@ -51,6 +51,7 @@ def parse_args():
                         help='Memory limit for each experiment in bytes (suffix M/G for Megabytes/Gigabytes) (default: %(default)s)')
     args = parser.parse_args()
 
+    # process args.memout in case it is given human notation xxG or xxM
     try:
         mem = float(args.memout)    # memout is just bytes
     except: # memout must have an M or G
@@ -64,6 +65,7 @@ def parse_args():
         except Exception as e:
             print("Problem with memory specification. Use float with optional M and G suffix: ", e)
             exit(1)
+    args.memout = mem  
 
     if args.planner != fcfond.planner.INDEX:
         args.k = None

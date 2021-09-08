@@ -1,0 +1,6 @@
+(define (problem qnp2-02) (:domain qnp2-02)
+	(:init (gr0_1) (gr0_2) (p))
+	(:goal (not (gr0_2)))
+	(:fairness :a (a1) :b (a2))
+	(:fairness :a (a2))
+)

@@ -11,6 +11,7 @@ from fcfond.names import STDOUT, PROBLEM
 import fcfond.experiments.qnp
 import fcfond.experiments.ltl
 import fcfond.experiments.fondsat
+import fcfond.experiments.synthetic
 
 def list_experiments(name):
     experiments = get_experiments()
@@ -43,7 +44,8 @@ def list_experiments(name):
 def get_experiments():
     experiments = {**fcfond.experiments.qnp.get_experiments(),
                    **fcfond.experiments.ltl.get_experiments(),
-                   **fcfond.experiments.fondsat.get_experiments()}
+                   **fcfond.experiments.fondsat.get_experiments(),
+                   **fcfond.experiments.synthetic.get_experiments()}
     add_pddl_experiment(experiments, 'foot3x2', 'foot3x2', PDDL_DOM_PATHS/'foot3x2_d.pddl',
                         PDDL_DOM_PATHS/'foot3x2_p.pddl', DEFAULT_OUT/'foot3x2',
                         fcfond.planner.FONDPLUS)

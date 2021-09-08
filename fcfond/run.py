@@ -19,7 +19,7 @@ def process_output(output, profile):
             parsed_out[RESULT] = parsed_out[SAT]
     else:
         parsed_out = {RESULT: profile[STATUS]}
-    parsed_out[MAXMEM] = profile[MEMORY] / 1e6
+    parsed_out[MAXMEM] = profile[MEMORY] / 1e3 # TODO resource.getrusage gives different units depending on OS
     return parsed_out
 
 def solve_pddl(name, domain_file, problem_file, planner,

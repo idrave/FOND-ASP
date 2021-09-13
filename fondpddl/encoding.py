@@ -2,6 +2,7 @@ from fondpddl import Problem
 from fondpddl.algorithm import GraphIterator
 from fondpddl.utils import Index
 from fcfond.names import STATE_N, ACTION_N
+import fondpddl
 import clingo
 
 def node_1(node):
@@ -26,7 +27,7 @@ def root_1(node):
     return clingo.Function('root', [node])
 
 def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
-                            expand_goal=True, ids=True, log=False, track=False,
+                            expand_goal=True, ids=True, track=False,
                             logdict=None):
     state_index = Index()
     action_index = Index()
@@ -53,17 +54,16 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
         logdict[STATE_N] = len(state_index)
         logdict[ACTION_N] = len(action_index)
 
-    if log:
-        print('States:')
+    if fondpddl.logger != None:
+        fondpddl.logger.debug('States:')
         for i, elem in enumerate(state_index):
-            print(f'State {i}: ', elem.string(problem))
+            fondpddl.logger.debug(f'State {i}: %s' % elem.string(problem))
         for i, elem in enumerate(action_index):
-            print(f'Action {i}: ', str(elem))
-
+            fondpddl.logger.debug(f'Action {i}: %s' % str(elem))
     return
 
 def clingo_problem_graph(problem: Problem, iterator: GraphIterator,
-                            expand_goal=True, ids=False, log=False,
+                            expand_goal=True, ids=False, track=False,
                             logdict=None):
     state_index = Index()
     action_index = Index()
@@ -75,7 +75,8 @@ def clingo_problem_graph(problem: Problem, iterator: GraphIterator,
         if first:
             yield root_1(st)
             first = False
-        print('node ', len(state_index), end='\r')
+        if track:
+            print('node ', len(state_index), end='\r')
         for action, children in state.transitions:
             assert len(children) == 1 # deterministic domains
             child = state_index.get_index(children[0])
@@ -87,11 +88,11 @@ def clingo_problem_graph(problem: Problem, iterator: GraphIterator,
     for action in action_index:
         yield labelname_2(action_index.get_index(action), action)
 
-    if log:
-        print('States:')
+    if fondpddl.logger != None:
+        fondpddl.logger.debug('States:')
         for i, elem in enumerate(state_index):
-            print(f'State {i}: ', elem.string(problem))
+            fondpddl.logger.debug(f'State {i}: ', elem.string(problem))
         for i, elem in enumerate(action_index):
-            print(f'Action {i}: ', str(elem))
+            fondpddl.logger.debug(f'Action {i}: ', str(elem))
 
     return

@@ -2,8 +2,9 @@ from fcfond.experiments.names import OUTPUT
 from fcfond.profile import parse_clingo_out, MAXMEM, MEMORY
 from fondpddl.algorithm import BreadthFirstSearch
 from fondpddl import encode_clingo_problem
-import fcfond.planner
+import fcfond
 import psutil
+import logging
 from pathlib import Path
 import os
 import time
@@ -23,12 +24,12 @@ def process_output(output, profile):
     return parsed_out
 
 def solve_pddl(name, domain_file, problem_file, planner,
-                output_dir, iterator, timelimit, memlimit, expand_goal=False, log=False, track=True, **kwargs):
+                output_dir, iterator, timelimit, memlimit, expand_goal=False, track=True, **kwargs):
     start = time.process_time()
     logs = {PROBLEM: name}
     symbols = encode_clingo_problem(
                         domain_file, problem_file, iterator=iterator,
-                        expand_goal=expand_goal, log=log, logdict=logs, track=track)
+                        expand_goal=expand_goal, logdict=logs, track=track)
     processed = str(Path(output_dir)/('proc_' + name + '.lp'))
     process = psutil.Process(os.getpid())
     with open(processed, 'w') as fp:
@@ -45,16 +46,16 @@ def solve_pddl(name, domain_file, problem_file, planner,
             fp.write(str(symbol)+'.\n')
     domain_file = processed
     logs[PREPROCESS] = time.process_time() - start
-    print('Pddl processed. Start ASP solver.')
+    fcfond.logger.info('Pddl processed. Start ASP solver.')
     output, profile = fcfond.planner.solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
-    print("ASP Solved. Processing output")
+    fcfond.logger.info("ASP Solved. Processing output")
     logs.update(process_output(output, profile))
-    print('Result (SAT):', logs[RESULT])
-    print("Output processed.")
+    fcfond.logger.info('Result (SAT): '+str(logs[RESULT]))
+    fcfond.logger.info("Output processed.")
     logs[STDOUT] = output
     return logs
 
-def run_pddl(pddl_files, timeout, memout, output=None, log=False, track=True, stats=True, n=1, planner=None,
+def run_pddl(pddl_files, timeout, memout, output=None, track=True, stats=True, n=1, planner=None,
                     expgoal=False, k=None, threads=1):
     out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
@@ -62,7 +63,7 @@ def run_pddl(pddl_files, timeout, memout, output=None, log=False, track=True, st
     results = []
     for domain, problem in pddl_files:
         res = solve_pddl(Path(problem).stem, domain, problem, planner, str(out_path),
-                         BreadthFirstSearch(), timeout, memout, log=log, track=track,
+                         BreadthFirstSearch(), timeout, memout, track=track,
                          n=n, expand_goal=expgoal, k=k, threads=threads)
         format_results(res)
         results.append(res)
@@ -71,17 +72,17 @@ def run_pddl(pddl_files, timeout, memout, output=None, log=False, track=True, st
     for result in results:
         stdout += result[PROBLEM]+'\n'
         stdout += result[STDOUT]+'\n'
-    if log:
-        print(stdout)
+    
+    logging.debug(stdout)
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
     df.to_csv(str(out_path/'metrics.csv'),index=False)
 
-    if stats or log:
+    if stats:
         for col in df.columns:
             print(f"{col}: {df.iloc[0][col]}")
         print()
         print(df)
-    with open(str(out_path/'stdout.txt'), 'w') as fp:
+    with open(str(out_path/'stdout-asp.txt'), 'w') as fp:
         fp.write(stdout)
 
 def solve_clingo(name, domain_file, planner, output_dir,
@@ -89,11 +90,11 @@ def solve_clingo(name, domain_file, planner, output_dir,
     logs = {PROBLEM: name}
     output, profile = fcfond.planner.solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
-    print('Result (SAT):', logs[RESULT])
+    fcfond.logger.info('Result (SAT): ' + str(logs[RESULT]))
     logs[STDOUT] = output
     return logs
 
-def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=False, stats=True, n=1, planner=None, k=None, threads=1):
+def run_clingo(clingo_files, timeout, memout, output, stats=True, n=1, planner=None, k=None, threads=1):
     
     out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
@@ -101,7 +102,7 @@ def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=Fal
     results = []
     for problem in clingo_files:
         res = solve_clingo(Path(problem).stem, problem, planner, str(output),
-                         timeout, memout, log=log,
+                         timeout, memout,
                          n=n, k=k, threads=threads)
         format_results(res)
         results.append(res)
@@ -110,17 +111,16 @@ def run_clingo(clingo_files, timeout, memout, output, pre_process=False, log=Fal
     for result in results:
         stdout += result[PROBLEM]+'\n'
         stdout += result[STDOUT]+'\n'
-    if log:
-        print(stdout)
+    logging.debug(stdout)
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
     df.to_csv(str(out_path/'metrics.csv'),index=False)
 
-    if stats or log:
+    if stats:
         for col in df.columns:
             print(f"{col}: {df.iloc[0][col]}")
         print()
         print(df)
-    with open(str(out_path/'stdout.txt'), 'w') as fp:
+    with open(str(out_path/'stdout-asp.txt'), 'w') as fp:
         fp.write(stdout)
 
 def format_results(results):

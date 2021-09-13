@@ -3,6 +3,7 @@ import re
 import signal
 import argparse
 import resource
+import fcfond
 from fcfond.names import *
 
 TIMEOUT = 'Timeout'
@@ -36,7 +37,7 @@ def run_profile(args, time_limit=1800.0, memory_limit=8e9):
             ps.kill()
         status = TIMEOUT
     except Exception as e:
-        print(e)
+        fcfond.logger.error(e)
         pass
     out = out.decode('utf-8') if out != None else ''
     err = err.decode('utf-8') if err != None else ''

@@ -2,7 +2,7 @@ from pathlib import Path
 from fondpddl import encode_clingo_problem
 from fondpddl.algorithm import BreadthFirstSearch
 from fcfond.run import solve_pddl, solve_clingo, format_results
-import fcfond.planner
+import fcfond
 from fcfond.experiments.utils import add_pddl_experiment, add_experiment_list
 import pandas as pd
 
@@ -75,8 +75,8 @@ def get_experiments():
     
     return experiments
 
-def run_experiments(names, timeout, memout, output=None, log=False, n=1, planner=None,
-                    expgoal=False, k=None, threads=1):
+def run_experiments(names, timeout, memout, output=None, n=1, planner=None,
+                    expgoal=False, k=None, threads=1, stats=True):
     experiments = get_experiments()
     results = []
     for name in names:
@@ -84,12 +84,12 @@ def run_experiments(names, timeout, memout, output=None, log=False, n=1, planner
             experiment = experiments[name]
         else:
             raise ValueError(f'Wrong experiment name {name}')
-        output = output if output != None else experiment[OUTPUT]
-        out_path = Path(output)
+        out = output if output != None else experiment[OUTPUT]
+        out_path = Path(out)
         if not out_path.is_dir():
             out_path.mkdir(parents=True)
 
-        res = run_experiment(name, experiments, output, timeout, memout, log=log,
+        res = run_experiment(name, experiments, out, timeout, memout,
                              n=n, planner=planner, expgoal=expgoal,
                              k=k, threads=threads)
         for result in res:
@@ -100,18 +100,20 @@ def run_experiments(names, timeout, memout, output=None, log=False, n=1, planner
     for result in results:
         stdout += result[PROBLEM]+'\n'
         stdout += result[STDOUT]+'\n'
-    if log:
-        print(stdout)
+    fcfond.logger.debug(stdout)
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
     df.to_csv(str(Path(output)/'metrics.csv'),index=False)
 
-    if log:
+    if stats:
+        for col in df.columns:
+            print(f"{col}: {df.iloc[0][col]}") # TODO does not work well for multiple experiments
+        print()
         print(df)
-    with open(str(Path(output)/'stdout.txt'), 'w') as fp:
+    with open(str(Path(output)/'stdout-asp.txt'), 'w') as fp:
         fp.write(stdout)
 
 def run_experiment(name, experiments, output, timelimit,
-                   memlimit, log=False, n=1, planner=None, expgoal=False,
+                   memlimit, n=1, planner=None, expgoal=False,
                    k=None, threads=1):
     print(name)
     if name in experiments:
@@ -123,7 +125,7 @@ def run_experiment(name, experiments, output, timelimit,
         print(experiment[EXPERIMENTS])
         for exp in experiment[EXPERIMENTS]:
             result = run_experiment(exp, experiments,output,timelimit, memlimit,
-                                     log=log, planner=planner,
+                                     planner=planner,
                                      expgoal=expgoal, k=k, threads=threads)
             results.append(result)
         return experiment[CALLBACK](experiment, results)
@@ -140,7 +142,7 @@ def run_experiment(name, experiments, output, timelimit,
                     experiment[PROB_NAME], experiment[PDDL_DOMAIN],
                     experiment[PDDL_PROBLEM], planner, output,
                     experiment[GRAPH_ITER](), timelimit, memlimit, expand_goal=expgoal or experiment[EXPGOAL],
-                    log=log, k=k, n=n, threads=threads)
+                    k=k, n=n, threads=threads)
     
     return [results]
 

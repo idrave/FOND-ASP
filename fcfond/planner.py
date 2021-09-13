@@ -1,4 +1,5 @@
 from pathlib import Path
+import fcfond
 from fcfond.profile import run_profile
 
 PLANNERPATH = Path(__file__).parent/'planner_clingo'
@@ -15,5 +16,5 @@ def solve(domain, timelimit, memlimit, k=None, n=1, threads=1, planner=None, **k
     args = ['clingo', f, domain, '-n', str(n), '-t', str(threads)]
     if k != None:
         args += ['-c', f'k={k}']
-    print(args)
+    fcfond.logger.info('Command ' + str(args))
     return run_profile(args, time_limit=timelimit, memory_limit=memlimit)

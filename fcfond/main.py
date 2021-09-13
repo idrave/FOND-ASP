@@ -1,9 +1,13 @@
 import argparse
+import fondpddl
+from fcfond.experiments.names import OUTPUT
 from fcfond.experiments import run_experiments, list_experiments
 from fcfond.run import run_pddl, run_clingo
 import fcfond.planner
-
+from pathlib import Path
+import logging
 import re
+import sys
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -79,22 +83,30 @@ def main():
         list_experiments(args.list)
         return
 
+    outpath = Path(args.out if args.out != None else OUTPUT)
+    if not outpath.is_dir():
+        outpath.mkdir(parents=True)
+    logging.basicConfig(level=logging.DEBUG if args.log else logging.INFO,
+                        handlers=[logging.StreamHandler(sys.stdout)],
+                        format='%(message)s')
+    fondpddl.logger.addHandler(logging.FileHandler(outpath/'stdout-encode.txt','w'))
+
     planner = args.planner
     if args.pddl != None:
         assert len(args.pddl) % 2 == 0, "Must have an even number of pddl files"
         pddls = [args.pddl[i:i+2] for i in range(0,len(args.pddl),2)]
         run_pddl(pddls, args.timeout, args.memout,
-                    args.out, log=args.log, track=not args.notrack, stats=args.stats,
+                    args.out, track=not args.notrack, stats=args.stats,
                     n=args.n, planner=planner, expgoal=args.expgoal,
                     k=args.k, threads=args.t)
     if args.clingo != None:
         run_clingo(args.clingo, args.timeout, args.memout,
-                        args.out, log=args.log, stats=args.stats,
+                        args.out, stats=args.stats,
                         n=args.n, planner=planner,
                         k=args.k, threads=args.t)
     if len(args.experiments):
         run_experiments(args.experiments, args.timeout, args.memout,
-                        output=args.out, log=args.log,
+                        output=args.out, stats=args.stats,
                         n=args.n, planner=planner, expgoal=args.expgoal,
                         k=args.k, threads=args.t)
 

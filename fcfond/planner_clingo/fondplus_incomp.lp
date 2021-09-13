@@ -35,13 +35,16 @@ apply_B(S,J) :- policy(S,A), con_B(A,J).
 fairc(J) :- con_A(_,J), {con_B(A,J)}=0.
 fairc(J) :- con_B(_,J), terminating(S) : apply_B(S,J). 
 
- blocked(S,X) :- terminating(S), con_A(_,X).
- blocked(S,X) :- reach(S), con_A(_,X), not apply_B(S,X),  blocked(T,X) : edge(S,T), S != T.
-blocked2(S,X) :- terminating(S), con_A(_,X).
-blocked2(S,X) :- reach(S), con_A(_,X), not apply_B(S,X), blocked2(T,X) : edge(T,S), S != T.
+% blocked/2: all paths from s to a state s' applying an action in B_j contain a terminating state
+ blocked(S,J) :- terminating(S), con_A(_,J).
+ blocked(S,J) :- reach(S), con_A(_,J), not apply_B(S,J),  blocked(T,J) : edge(S,T), S != T.
+% blocked2/2: all paths to s from a state s' applying an action in B_j contain a terminating state
+blocked2(S,J) :- terminating(S), con_A(_,J).
+blocked2(S,J) :- reach(S), con_A(_,J), not apply_B(S,J), blocked2(T,J) : edge(T,S), S != T.
 
 % fair/1: uses above symbols to express that the policy applies action from A_j in state s,
-% where occurrences of actions in A_j are fair.
+% and there is a terminating state in all paths from s to itself passing through
+% a state that applies an action in B_j
 fair(S) :- apply_A(S, J), fairc(J).
 fair(S) :- apply_A(S, J), blocked(S, J).
 fair(S) :- apply_A(S, J), blocked2(S, J).

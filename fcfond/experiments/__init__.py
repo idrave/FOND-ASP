@@ -76,7 +76,7 @@ def get_experiments():
     return experiments
 
 def run_experiments(names, timeout, memout, output=None, n=1, planner=None,
-                    expgoal=False, k=None, threads=1, stats=True):
+                    expgoal=False, k=None, threads=1, stats=True, atoms=False):
     experiments = get_experiments()
     results = []
     for name in names:
@@ -91,7 +91,7 @@ def run_experiments(names, timeout, memout, output=None, n=1, planner=None,
 
         res = run_experiment(name, experiments, out, timeout, memout,
                              n=n, planner=planner, expgoal=expgoal,
-                             k=k, threads=threads)
+                             k=k, threads=threads, atoms=atoms)
         for result in res:
             format_results(result)
         results += res
@@ -102,19 +102,22 @@ def run_experiments(names, timeout, memout, output=None, n=1, planner=None,
         stdout += result[STDOUT]+'\n'
     fcfond.logger.debug(stdout)
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
-    df.to_csv(str(Path(output)/'metrics.csv'),index=False)
+    out_path = Path(output if output != None else OUTPUT)
+    if not out_path.is_dir():
+        out_path.mkdir(parents=True)
+    df.to_csv(str(out_path/'metrics.csv'),index=False)
 
     if stats:
         for col in df.columns:
             print(f"{col}: {df.iloc[0][col]}") # TODO does not work well for multiple experiments
         print()
         print(df)
-    with open(str(Path(output)/'stdout-asp.txt'), 'w') as fp:
+    with open(str(out_path/'stdout-asp.txt'), 'w') as fp:
         fp.write(stdout)
 
 def run_experiment(name, experiments, output, timelimit,
                    memlimit, n=1, planner=None, expgoal=False,
-                   k=None, threads=1):
+                   k=None, threads=1, atoms=False):
     print(name)
     if name in experiments:
         experiment = experiments[name]
@@ -125,8 +128,8 @@ def run_experiment(name, experiments, output, timelimit,
         print(experiment[EXPERIMENTS])
         for exp in experiment[EXPERIMENTS]:
             result = run_experiment(exp, experiments,output,timelimit, memlimit,
-                                     planner=planner,
-                                     expgoal=expgoal, k=k, threads=threads)
+                                     planner=planner, expgoal=expgoal, k=k,
+                                     threads=threads, atoms=atoms)
             results.append(result)
         return experiment[CALLBACK](experiment, results)
 
@@ -142,7 +145,7 @@ def run_experiment(name, experiments, output, timelimit,
                     experiment[PROB_NAME], experiment[PDDL_DOMAIN],
                     experiment[PDDL_PROBLEM], planner, output,
                     experiment[GRAPH_ITER](), timelimit, memlimit, expand_goal=expgoal or experiment[EXPGOAL],
-                    k=k, n=n, threads=threads)
+                    k=k, n=n, threads=threads, atoms=atoms)
     
     return [results]
 

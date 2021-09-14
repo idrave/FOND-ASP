@@ -28,7 +28,7 @@ def root_1(node):
 
 def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
                             expand_goal=True, ids=True, track=False,
-                            logdict=None):
+                            logdict=None, atoms=False):
     state_index = Index()
     action_index = Index()
     for state in iterator.iterate(problem, expand_goal=expand_goal):
@@ -39,7 +39,7 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
             action_index.get_index(action)
             for child in children:
                 state_index.get_index(child)
-        for symbol in state.encode_clingo(state_index, action_index):
+        for symbol in state.encode_clingo(state_index, action_index, atoms=atoms):
             yield symbol
         if ids:
             yield state.id_clingo(state_index, problem)

@@ -24,12 +24,12 @@ def process_output(output, profile):
     return parsed_out
 
 def solve_pddl(name, domain_file, problem_file, planner,
-                output_dir, iterator, timelimit, memlimit, expand_goal=False, track=True, **kwargs):
+                output_dir, iterator, timelimit, memlimit, expand_goal=False, track=True, atoms=False, **kwargs):
     start = time.process_time()
     logs = {PROBLEM: name}
     symbols = encode_clingo_problem(
                         domain_file, problem_file, iterator=iterator,
-                        expand_goal=expand_goal, logdict=logs, track=track)
+                        expand_goal=expand_goal, logdict=logs, track=track, atoms=atoms)
     processed = str(Path(output_dir)/('proc_' + name + '.lp'))
     process = psutil.Process(os.getpid())
     with open(processed, 'w') as fp:
@@ -56,7 +56,7 @@ def solve_pddl(name, domain_file, problem_file, planner,
     return logs
 
 def run_pddl(pddl_files, timeout, memout, output=None, track=True, stats=True, n=1, planner=None,
-                    expgoal=False, k=None, threads=1):
+                    expgoal=False, k=None, threads=1, atoms=False):
     out_path = Path(output) if output != None else Path(OUTPUT)
     if not out_path.is_dir():
         out_path.mkdir(parents=True)
@@ -64,7 +64,7 @@ def run_pddl(pddl_files, timeout, memout, output=None, track=True, stats=True, n
     for domain, problem in pddl_files:
         res = solve_pddl(Path(problem).stem, domain, problem, planner, str(out_path),
                          BreadthFirstSearch(), timeout, memout, track=track,
-                         n=n, expand_goal=expgoal, k=k, threads=threads)
+                         n=n, expand_goal=expgoal, k=k, threads=threads, atoms=atoms)
         format_results(res)
         results.append(res)
 

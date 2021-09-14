@@ -54,10 +54,15 @@ class State:
     def print_state(self, problem: Problem):
         print(self.string(problem))
 
-    def encode_clingo(self, state_names, action_names):
+    def encode_clingo(self, state_names, action_names, atoms=False):
         name = clingo.Number(state_names.get_index(self))
 
         symbols = [clingo.Function('state', [name])]
+        if atoms:
+            for p_id, v_id in self.atoms.iter_ids():
+                p_id_s = clingo.Number(p_id)
+                v_id_s = clingo.Number(v_id)
+                symbols.append(clingo.Function('val', [clingo.Function('', [p_id_s, v_id_s]), name]))
         if self.is_init:
             symbols.append(clingo.Function('initialState', [name]))
         if self.is_goal: 

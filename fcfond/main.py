@@ -46,6 +46,8 @@ def parse_args():
                         help='Index limit for planner with option --index (default: %(default)s)')
     parser.add_argument('--expgoal', action='store_true',
                         help='Whether to expand goal states in pddl translation')
+    parser.add_argument('--atoms', action='store_true',
+                        help='Whether to add symbols for atom valuation in states when translating from pddl')
     parser.add_argument('-n', type=int, default=1,
                         help='Number of clingo models; 0 to return all (default: %(default)s)')
     parser.add_argument('-t', type=int, default=1, help='Number of threads')
@@ -98,7 +100,7 @@ def main():
         run_pddl(pddls, args.timeout, args.memout,
                     args.out, track=not args.notrack, stats=args.stats,
                     n=args.n, planner=planner, expgoal=args.expgoal,
-                    k=args.k, threads=args.t)
+                    k=args.k, threads=args.t, atoms=args.atoms)
     if args.clingo != None:
         run_clingo(args.clingo, args.timeout, args.memout,
                         args.out, stats=args.stats,
@@ -108,7 +110,7 @@ def main():
         run_experiments(args.experiments, args.timeout, args.memout,
                         output=args.out, stats=args.stats,
                         n=args.n, planner=planner, expgoal=args.expgoal,
-                        k=args.k, threads=args.t)
+                        k=args.k, threads=args.t, atoms=args.atoms)
 
 if __name__ == "__main__":
     main()

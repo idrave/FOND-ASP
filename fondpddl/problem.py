@@ -1,13 +1,13 @@
-from fondpddl import Domain, Constant, ConstType, GroundAction, State
-import fondpddl.condition
-from fondpddl.action import ProblemAction
-from fondpddl.condition import Variable, GroundVar, Precondition, EmptyCondition
-from fondpddl.effect import AndEffect, Init, EmptyEffect, Effect
+from fondpddl import Domain, Constant, ConstType
+from fondpddl.action import ProblemAction, GroundAction
+from fondpddl.state import State
+from fondpddl.condition import GroundVar, Precondition, EmptyCondition
+from fondpddl.effect import AndEffect, Init, EmptyEffect
 from fondpddl.constant import parse_objects
-from fondpddl.utils import Index, get_combinations, StaticBitSet
+from fondpddl.utils import Index
 from fondpddl.utils.atomdict import StaticAtomDict
-from fondpddl.utils.tokens import PddlIter, PddlTree
-from typing import List, Generator, Iterator, Tuple
+from fondpddl.utils.tokens import PddlTree
+from typing import List, Iterator, Tuple
 
 PROBLEM_NAME = 'name'
 PROBLEM_OBJ = 'objects'
@@ -17,13 +17,14 @@ PROBLEM_FAIR = 'fairness'
 
 class Problem:
     def __init__(self, name: str, domain: Domain, objects: List[Constant],
-                 init: List[Init], goal: Precondition, constraints):
+                 init: List[Init], goal: Precondition, constraints, atoms=False):
         self.name = name
         self.domain = domain
         self.objects = objects
         self.init = init
         self.goal = goal
         self.set_fairness(constraints)
+        self.__store_val_changes = atoms
 
         self.var_index = {pred.get_id(): Index() for pred in self.domain.predicates}
         if domain.is_typed():
@@ -79,6 +80,12 @@ class Problem:
         for positive, negative in action.get_effects(state, self):
             st = state.change_values(positive, negative)
             yield st
+
+    def set_store_value_changes(self, store):
+        self.__store_val_changes = store
+
+    def store_value_changes(self):
+        return self.__store_val_changes
 
     def is_goal(self, state: State)->bool:
         return self.goal.evaluate(state, self)

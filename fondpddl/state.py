@@ -2,9 +2,9 @@ from __future__ import annotations
 import typing
 if typing.TYPE_CHECKING:
     from fondpddl import Problem
-from fondpddl import GroundAction, Predicate
+from fondpddl.action import GroundAction
+from fondpddl.predicates import Predicate
 from fondpddl.condition import GroundVar
-from fondpddl.utils import BitSet, StaticBitSet, AtomSet
 from typing import List, Tuple, Optional
 from fondpddl.utils.atomdict import StaticAtomDict, AtomDict
 import clingo

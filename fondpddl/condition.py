@@ -10,6 +10,7 @@ from fondpddl import Predicate, TypedObject, Argument, ConstType, Constant
 from fondpddl.utils import Index, get_combinations, AtomSet
 from fondpddl.utils.atomdict import AtomDict
 from fondpddl.utils.tokens import PddlIter, PddlTree
+from fondpddl.constant import parse_const_list
 from fondpddl.utils.condition_solve import Conjunction, Disjunction, Negation, VariableSet, AlwaysFalse, AlwaysTrue, EqualitySet
 from typing import List
 import fondpddl.effect
@@ -159,7 +160,6 @@ class Variable(Precondition, fondpddl.effect.Effect):
             raise ValueError(f'Too little arguments for predicate {predicate.name}')
         for param, const in zip(self.predicate.arguments, constants):
             if param.ctype != None and not const.ctype.is_subtype(param.ctype):
-                print(const.name, const.ctype.name)
                 raise ValueError(f'Wrong argument type {const.ctype} for {predicate.name}')
     
     def __str__(self):
@@ -201,18 +201,9 @@ class Variable(Precondition, fondpddl.effect.Effect):
         predicate = predicates.get(name, None)
         if predicate == None:
             raise ValueError(f'Unknown predicate {name}')
-        params = []
-        while pddl_iter.has_next():
-            if pddl_iter.is_next_name():
-                param_name = pddl_iter.get_name()
-            else:
-                param_name = pddl_iter.get_param()
-            param = objects.get(param_name, None)
-            if param == None:
-                raise ValueError(f'Unknown constant/argument {param_name}')
-            params.append(param)
-            if len(params) > len(predicate.arguments):
-                raise ValueError(f'Too many arguments for predicate {name}')
+        params = parse_const_list(pddl_iter, objects)
+        if len(params) > len(predicate.arguments):
+            raise ValueError(f'Too many arguments for predicate {name}')
         return Variable(predicate, params)
     
     @staticmethod

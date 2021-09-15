@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Iterator
-from fondpddl import State
+from fondpddl.state import State
 
 class GraphIterator(ABC):
     def __init__(self):

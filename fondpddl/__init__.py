@@ -2,12 +2,8 @@ from fondpddl.ctype import ConstType
 from fondpddl.constant import Constant, TypedObject
 from fondpddl.argument import Argument, ActionParam
 from fondpddl.predicates import Predicate
-from fondpddl.action import Action, GroundAction
-from fondpddl.state import State
 from fondpddl.domain import Domain
 from fondpddl.problem import Problem
-import fondpddl.condition
-import fondpddl.effect
 import fondpddl.algorithm
 import fondpddl.encoding
 import logging

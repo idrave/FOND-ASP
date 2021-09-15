@@ -1,6 +1,5 @@
-from fondpddl.utils import StaticBitSet
-from fondpddl.utils.atomdict import StaticAtomDict
-from fondpddl import Problem, State
+from fondpddl.problem import Problem
+from fondpddl.state import State
 from fondpddl.algorithm import GraphIterator
 from typing import Iterator
 

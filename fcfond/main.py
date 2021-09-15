@@ -108,7 +108,7 @@ def main():
                         k=args.k, threads=args.t)
     if len(args.experiments):
         run_experiments(args.experiments, args.timeout, args.memout,
-                        output=args.out, stats=args.stats,
+                        output=args.out, stats=args.stats, track=not args.notrack,
                         n=args.n, planner=planner, expgoal=args.expgoal,
                         k=args.k, threads=args.t, atoms=args.atoms)
 

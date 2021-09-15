@@ -1,4 +1,7 @@
 from __future__ import annotations
+
+from clingo import symbol
+from fondpddl.utils.atomdict import AtomDict
 import typing
 if typing.TYPE_CHECKING:
     from fondpddl import State, Problem
@@ -106,7 +109,7 @@ class Action:
         effects = effects if effects != None else EmptyEffect()
         return Action(action_name, params, preconditions, effects)
 
-class ProblemAction: #TODO possibly remove this (?)
+class ProblemAction:
     def __init__(self, action: Action, problem: Problem):
         self.__action = action
         self.__ground = {}
@@ -127,6 +130,7 @@ class GroundAction:
         self.constants = constants
         self.__effect = None
         self.__const_ids = (c.id for c in constants)
+        self.__atoms = None
 
     def get_const_ids(self):
         return self.__const_ids
@@ -144,8 +148,16 @@ class GroundAction:
             param.ground(const)
         if self.__effect == None:
             self.__effect = self.action.effect.ground(problem)
-        for effect in self.__effect.get_effects(problem, state):
-            yield effect
+        if problem.store_value_changes() and self.__atoms == None:
+            pos, neg = AtomDict(), AtomDict()
+            for effect in self.__effect.get_effects(problem, state):
+                pos = pos.join(effect[0].difference(effect[1]))
+                neg = neg.join(effect[1].difference(effect[0]))
+                yield effect
+            self.__atoms = (pos, neg)
+        else:
+            for effect in self.__effect.get_effects(problem, state):
+                yield effect
         for param in self.action.parameters:
             param.reset()
 
@@ -167,10 +179,20 @@ class GroundAction:
                 return False
         return True
 
-    def encode_clingo(self, problem: Problem, action_index: Index):
+    def encode_clingo(self, problem: Problem, action_index: Index, atoms=False):
         symbols = []
         index = clingo.Number(action_index.get_index(self))
         symbols.append(clingo.Function('action', [index]))
+        if atoms and self.__atoms != None:
+            pos, neg = self.__atoms
+            t = clingo.Number(1)
+            f = clingo.Number(0)
+            for p, v in pos.iter_ids():
+                p_s, v_s = clingo.Number(p), clingo.Number(v)
+                symbols.append(clingo.Function('eff', [clingo.Function('', [p_s, v_s]), index, t]))
+            for p, v in neg.iter_ids():
+                p_s, v_s = clingo.Number(p), clingo.Number(v)
+                symbols.append(clingo.Function('eff', [clingo.Function('', [p_s, v_s]), index, f]))
 
         const_a, const_b = problem.get_fair_constraints(self)
         for constraint in const_a:

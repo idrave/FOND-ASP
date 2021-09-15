@@ -31,6 +31,7 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
                             logdict=None, atoms=False):
     state_index = Index()
     action_index = Index()
+    problem.set_store_value_changes(atoms)
     for state in iterator.iterate(problem, expand_goal=expand_goal):
         state_index.get_index(state)
         if track:
@@ -45,7 +46,7 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
             yield state.id_clingo(state_index, problem)
 
     for action in action_index:
-        for symbol in action.encode_clingo(problem, action_index):
+        for symbol in action.encode_clingo(problem, action_index, atoms=atoms):
             yield symbol
         if ids:
             yield action.id_clingo(action_index)

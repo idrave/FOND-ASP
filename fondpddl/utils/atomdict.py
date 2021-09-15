@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import List, Optional
-import fondpddl.condition
+import typing
+if typing.TYPE_CHECKING:
+    import fondpddl.condition
 from fondpddl.utils import BitSet, StaticBitSet
 import copy
 

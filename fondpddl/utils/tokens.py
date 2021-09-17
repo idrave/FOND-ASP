@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Iterable
 import re
 NAME = r'[a-z][a-z0-9_-]*'
@@ -70,6 +71,9 @@ class PddlIter:
 
     def is_next_name(self):
         return self.has_next() and re.fullmatch(NAME, self.peek()) != None
+        
+    def is_next_param(self):
+        return self.has_next() and re.fullmatch(r'\?'+NAME, self.peek()) != None
 
     def get_name(self):
         token = self.get_next()
@@ -86,7 +90,7 @@ class PddlIter:
     def is_next_group(self):
         return self.has_next() and isinstance(self.peek(), PddlTree)
 
-    def get_group(self):
+    def get_group(self) -> PddlTree:
         token = self.get_next()
         if token == None or not isinstance(token, PddlTree):
             raise ValueError(f'Unexpected {token}')

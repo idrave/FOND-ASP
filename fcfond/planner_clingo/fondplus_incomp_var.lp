@@ -49,8 +49,8 @@ fairc(J) :- con_B(_,J), finite(S) : apply_B(S,J).
 
 % fairc/3: all states with value X (true or false) of variable K where an action in B_j is applied
 % can only be traversed finitely often
-fairc(J,K,1) :- atom(K), con_B(_,J), finite(S) : apply_B(S,J), not val(K,S). 
-fairc(J,K,0) :- atom(K), con_B(_,J), finite(S) : apply_B(S,J),     val(K,S).
+fairc(J,K,1) :- atom(K), con_B(_,J), finite(S) : apply_B(S,J),     val(K,S). 
+fairc(J,K,0) :- atom(K), con_B(_,J), finite(S) : apply_B(S,J), not val(K,S).
 
 % fair/1: uses above symbols to express that the policy applies action from A_j in state s,
 % and there is a terminating state in all paths from s to itself passing through

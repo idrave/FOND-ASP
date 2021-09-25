@@ -1,3 +1,4 @@
+from re import T
 from fondpddl import ConstType, Constant, Predicate, Argument
 from fondpddl.utils import Index
 from fondpddl.utils.tokens import PddlTree, PddlIter, parse_typed_list
@@ -170,17 +171,36 @@ class Domain:
             raise ValueError(':typing requirement missing using types')
         if domain_params[IS_TYPE_SET]:
             raise ValueError('Redefinition of types')
-        types = {t.name:t for t in domain_params[DOMAIN_TYP]}
         typed_list = parse_typed_list(pddl_iter)
+        types = {"object": None}
         for type_l, super_type_name in typed_list:
-            super_type = types.get(super_type_name, None)
-            if super_type == None:
-                raise ValueError(f'Type {super_type_name} not declared')
             for name in type_l:
                 if name in types:
                     raise ValueError(f'Duplicate type {name}')
-                types[name] = ConstType(name, super_type)
-        domain_params[DOMAIN_TYP] = list(types.values())
+                types[name] = super_type_name
+                
+        typeobjs = {t.name : t for t in domain_params[DOMAIN_TYP]}
+        def get_type_obj(t):
+            if t in typeobjs: 
+                ans = typeobjs[t]
+                if ans == None:
+                    raise ValueError("Cyclic dependency in types")
+                return ans
+            typeobjs[t] = None
+            st_name = types[t]
+            supertype = None
+            if st_name == None:
+                supertype = typeobjs["object"]
+            else:
+                supertype = get_type_obj(st_name)
+            typeobjs[t] = ConstType(t, supertype)
+            return typeobjs[t]
+
+        for t, st in types.items():
+            if st != None and st not in types:
+                raise ValueError(f'Undefined type {st}')
+        for t in types.keys():
+            domain_params[DOMAIN_TYP].append(get_type_obj(t))
         domain_params[IS_TYPE_SET] = True
 
     @staticmethod

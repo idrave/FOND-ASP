@@ -28,22 +28,53 @@ The FOND-ASP is written in Answer Set Programming (ASP) using [ASP Clingo system
 To run the system, you will need to have Clingo installed. In [Potassco](https://potassco.org/clingo/) webpage you can find information about how to set it up. The recommended installation is through a Conda environment running:
 
 ```bash
-conda install -c potassco clingo
+$ conda install -c potassco clingo
 ```
 
 Independently of the setup method used, you should be able to run from command line:
 
 ```bash
-clingo -h
+$ clingo -h
 ```
 
-Having Clingo installed, you will need to run:
+Having Clingo installed, you can get and setup FOND-ASP as follows:
 
 ```shell
-git clone https://github.com/idrave/fond-asp.git
-cd fond-asp
-pip install -r requirements.txt
-pip install -e .  # install project under `src/fcfondplanner`
+$ git clone https://github.com/idrave/fond-asp.git
+$ cd fond-asp
+$ pip install -r requirements.txt
+```
+
+Finally, install the planner as an [editable project](https://packaging.python.org/guides/distributing-packages-using-setuptools/#working-in-development-mode):
+
+```shell
+$ pip install -e .  # install as editable project as per setup.py
+```
+
+Effectively this adds the folder to [`sys.path`](https://www.devdungeon.com/content/python-import-syspath-and-pythonpath-tutorial#toc-12) variable which is used by Python to search for modules. This means you can now use/run the planner from anywhere, as it is installed as a packge, and any change in the source of the planner will be seen automatically.
+
+For example:
+
+```shell
+$ python -m fcfond.main -h
+usage: main.py [-h] [-list [LIST]] [-pddl PDDL [PDDL ...]] [-clingo CLINGO [CLINGO ...]] [-out OUT] [-log] [-notrack] [-stats]
+               [-planner PLANNER | --fondp | --fondpshow | --fondpnoshow | --strong | --strongcyclic | --dual | --index] [-k K] [--expgoal] [--atoms] [-n N] [-t T]
+               [-timeout TIMEOUT] [-memout MEMOUT]
+               [experiments [experiments ...]]
+...
+```
+
+You can check it has been installed as follows:
+
+```shell
+$ pip ip freeze | grep fond
+-e git+git@github.com:idrave/FOND-ASP.git@a1777855e1b31723601490f0522b704adc39afd0#egg=fcfondplanner
+```
+
+To remove the package:
+
+```shell
+$ pip uninstall fcfondplanner
 ```
 
 ### Using a Python Pipenv environment

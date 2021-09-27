@@ -13,7 +13,7 @@ STRONGCYCLIC = PLANNERPATH/'specialized'/'planner_strongcyclic.lp'
 
 def solve(domain, timelimit, memlimit, k=None, n=1, threads=1, planner=None, **kwargs):
     f = FONDPLUS if planner == None else planner
-    args = ['clingo', f, domain, '-n', str(n), '-t', str(threads)]
+    args = ['clingo', f, domain, '-n', str(n), '-t', str(threads), '--single-shot']
     if k != None:
         args += ['-c', f'k={k}']
     fcfond.logger.info('Command ' + str(args))

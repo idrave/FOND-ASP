@@ -50,7 +50,6 @@ def solve_pddl(name, domain_file, problem_file, planner,
     output, profile = fcfond.planner.solve(domain_file, timelimit-logs[PREPROCESS], memlimit, planner=planner, **kwargs)
     fcfond.logger.info("ASP Solved. Processing output")
     logs.update(process_output(output, profile))
-    fcfond.logger.info('Result (SAT): '+str(logs[RESULT]))
     fcfond.logger.info("Output processed.")
     logs[STDOUT] = output
     return logs
@@ -70,8 +69,8 @@ def run_pddl(pddl_files, timeout, memout, output=None, track=True, stats=True, n
 
     stdout = ''
     for result in results:
-        stdout += result[PROBLEM]+'\n'
-        stdout += result[STDOUT]+'\n'
+        stdout += result[PROBLEM] + '\n'
+        stdout += result[STDOUT] + '\n'
     
     logging.debug(stdout)
     df = pd.DataFrame(results).drop(STDOUT, axis=1)
@@ -90,7 +89,6 @@ def solve_clingo(name, domain_file, planner, output_dir,
     logs = {PROBLEM: name}
     output, profile = fcfond.planner.solve(domain_file, timelimit, memlimit, planner=planner, **kwargs)
     logs.update(process_output(output, profile))
-    fcfond.logger.info('Result (SAT): ' + str(logs[RESULT]))
     logs[STDOUT] = output
     return logs
 

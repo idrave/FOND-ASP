@@ -14,7 +14,7 @@ The FOND-ASP is written in Answer Set Programming (ASP) using [ASP Clingo system
   - [PDDL and ASP specifications of FOND+ problems](#pddl-and-asp-specifications-of-fond-problems)
     - [PDDL specifications](#pddl-specifications)
     - [ASP Encoding](#asp-encoding)
-  - [Running the FOND-ASP planning system for solving FOND+](#running-the-fond-asp-planning-system-for-solving-fond)
+  - [Running FOND-ASP](#running-fond-asp)
   - [Panners/Solvers available](#pannerssolvers-available)
     - [Pure Strong under adversarial semantics](#pure-strong-under-adversarial-semantics)
     - [Pure Strong-cyclic under state-fair semantics](#pure-strong-cyclic-under-state-fair-semantics)
@@ -188,7 +188,7 @@ The **output of a solver** should be atoms `policy(S, A)` specifying the action 
 
 Where `id/2` symbols are generating automatically by the PDDL parser to describe the states and actions assigned to each integer ID.
 
-## Running the FOND-ASP planning system for solving FOND+
+## Running FOND-ASP
 
 Once installed as an editable module, we can execute the planner by using `-m fcfond.main` from anywhere:
 
@@ -204,7 +204,7 @@ $ python -m fcfond.main -pddl DOMAIN PROBLEM
 
 where `DOMAIN` and `PROBLEM` are the PDDL files encoding the planning domain and problem to be solved.
 
-For example, to solve the 7th problem of the Doors benchmark using the default FOND+ solver implemented in `fcfond/planner_clingo/fondplus_show_pretty.lp`, show the statistics, and leave the result files under folder `output.fondasp/`:
+For example, to solve the 7th problem of the Doors benchmark using the default FOND+ solver implemented in `fcfond/planner_clingo/fondplus_show_pretty.lp`, show the statistics (`-stats`), and leave the result files under folder `output.fondasp/`:
 
 ```shell
 $ python -m fcfond.main -stats -out output.fondasp -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p07.pddl 
@@ -235,6 +235,8 @@ Max Memory: 628.396
 
 In this example, the solution will amount to a strong plan because no conditional fairness pairs have been specified. See below to use a specialized version that will solve it much faster.
 
+When given a PDDL file as above, the system will run in two phases. In the _first phase_, the PDDL is translated into an ASP flat encoding of the state space. By default, the number of states encoded is incrementally tracked and reported; that can be switched off via `-notrack`. In the _second phase_, the encoded flat representation of the PDDL problem is solved against a FOND+ planner solver (or a specialized one if option `-planner` is used).
+
 After execution, the planner will leave the following files in the output folder (`output/` by default, but can be specified via option `-out`):
 
 * `proc_p07.lp`: the full planning problem encoded as a set of ASP facts; see below for atoms used. This can be re-used to run the planner directly on this encoding and avoid a re-encoding.
@@ -249,6 +251,11 @@ When using option `-stats` as above, stats will be reported including various ti
 * `CPU Time`: Clingo solve time considering all threads used. When only one thread is used, it should equal `Time`.
 * `Solve Time`: time that took Clingo took to just _solve_ the problem, without considering Clingo's pre-procesing and grounding.
 * `1st Model Time`: time it took Clingo to find the first solution model.
+
+There are two major aspects that can be changed in the above default use of FOND-ASP:
+
+1. Specify a specialized planner solver via option `-planner`. There are a few of these planners available.
+2. Run the system directly on a Clingo ASP flat encoding of the planning task via option `-clingo`. This will save the pre-processing time of converting the PDDL specification into an ASP flat encoding.
 
 ## Panners/Solvers available
 

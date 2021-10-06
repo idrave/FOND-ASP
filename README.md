@@ -191,7 +191,7 @@ Where `id/2` symbols are generating automatically by the PDDL parser to describe
 
 ## Running the FOND-ASP planning system for solving FOND+
 
-To see all options available run:
+Once installed as an editable module, we can execute the planner by using `-m fcfond.main` from anywhere:
 
 ```bash
 $ python -m fcfond.main -h
@@ -205,19 +205,51 @@ $ python -m fcfond.main -pddl DOMAIN PROBLEM
 
 where `DOMAIN` and `PROBLEM` are the PDDL files encoding the planning domain and problem to be solved.
 
-For example:
+For example, to solve the 7th problem of the Doors benchmark using the default FOND+ solver implemented in `fcfond/planner_clingo/fondplus_show_pretty.lp`, show the statistics, and leave the result files under folder `output.fondasp/`:
 
 ```shell
-$ python -m fcfond.main -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p01.pddl
+$ python -m fcfond.main -stats -out output.fondasp -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p07.pddl 
+
+Namespace(atoms=False, clingo=None, experiments=[], expgoal=False, k=None, list=None, log=False, memout=8000000000.0, n=1, notrack=False, out=None, pddl=['fcfond/domains/pddl/fond-sat/doors/domain.pddl', 'fcfond/domains/pddl/fond-sat/doors/p07.pddl'], planner=None, stats=True, t=1, timeout=1800.0)
+Pddl processed. Start ASP solver.
+Command ['clingo', PosixPath('/mnt/ssardina-research/planning/FOND-ASP.git/fcfond/planner_clingo/fondplus_show_pretty.lp'), 'output/proc_p07.lp', '-n', '1', '-t', '1', '--single-shot']
+ASP Solved. Processing output
+Output processed.
+Problem: p07
+States: 1530
+Actions: 16
+Pre-processing time: 2.699
+Sat: True
+Models: 1
+Calls: 1
+Time: 17.26
+Solve Time: 0.07
+1st Model Time: 0.06
+Unsat Time: 0.02
+CPU Time: 17.258
+Result: True
+Max Memory: 628.396
+
+  Problem  States  Actions  Pre-processing time   Sat Models  Calls   Time  Solve Time  1st Model Time  Unsat Time  CPU Time Result  Max Memory
+0     p07    1530       16                2.699  True      1      1  17.26        0.07            0.06        0.02    17.258   True     628.396
 ```
 
-This will use the default FOND+ solver implemented in `fcfond/planner_clingo/fondplus_show_pretty.lp` and leave the results in the default `output/` folder:
+In this example, the solution will amount to a strong plan because no conditional fairness pairs have been specified. See below to use a specialized version that will solve it much faster.
 
-* `proc_p01.lp`: the full planning problem encoded as a set of ASP facts; see below for atoms used.
-* `stdout.txt`: the standard output of the ASP solver, which shows a successful policy, if any has been found, via atoms `policy(S, A)` specifying the action `A` to be applied in state `S`.
+After execution, the planner will leave the following files in the output folder (`output/` by default, but can be specified via option `-out`):
+
+* `proc_p07.lp`: the full planning problem encoded as a set of ASP facts; see below for atoms used. This can be re-used to run the planner directly on this encoding and avoid a re-encoding.
+* `stdout-encode.txt`: the standard output of the encoding phase from PDDL to ASP.
+* `stdout-asp.txt`: the standard output of the ASP solver, which shows a successful policy, if any has been found, via atoms `policy(S, A)` specifying the action `A` to be applied in state `S`.
 * `metrics.csv`: the statistic of the solving task (e.g., time, no of models, etc.).
 
-To change the default output folder, use `-out` option.
+When using option `-stats` as above, stats will be reported including various time statistics:
+
+* `Pre-processing Time`: time FOND-ASP took to pre-process the input before sending it to ASP solver.
+* `Time`: total time that Clingo ASP system took to run, as reported in `stdout-asp.txt` by Clingo itself. This includes Clingo pre-processing, grounding, and solving time of the input ASP.
+* `CPU Time`: Clingo solve time considering all threads used. When only one thread is used, it should equal `Time`.
+* `Solve Time`: time that took Clingo took to just _solve_ the problem, without considering Clingo's pre-procesing and grounding.
+* `1st Model Time`: time it took Clingo to find the first solution model.
 
 To change the solver, use the `--planner` option, as explained next.
 
@@ -281,11 +313,35 @@ which is equivalent to:
 $ python -m fcfond.main -pddl DOMAIN PROBLEM --planner fcfond/planner_clingo/specialized/planner_strong.lp
 ```
 
-For example:
+For example, if we re-run the above problem 7 of Doors with this specialized solver:
 
 ```shell
-$ python -m fcfond.main --strong -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p01.pddl
+$ python -m fcfond.main --strong -stats -out output.fondsat/ -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p07.pddl     
+Namespace(atoms=False, clingo=None, experiments=[], expgoal=False, k=None, list=None, log=False, memout=8000000000.0, n=1, notrack=False, out='output.fondsat/', pddl=['fcfond/domains/pddl/fond-sat/doors/domain.pddl', 'fcfond/domains/pddl/fond-sat/doors/p07.pddl'], planner=PosixPath('/mnt/ssardina-research/planning/FOND-ASP.git/fcfond/planner_clingo/specialized/planner_strong.lp'), stats=True, t=1, timeout=1800.0)
+Pddl processed. Start ASP solver.
+Command ['clingo', PosixPath('/mnt/ssardina-research/planning/FOND-ASP.git/fcfond/planner_clingo/specialized/planner_strong.lp'), 'output.fondsat/proc_p07.lp', '-n', '1', '-t', '1', '--single-shot']
+ASP Solved. Processing output
+Output processed.
+Problem: p07
+States: 1530
+Actions: 16
+Pre-processing time: 2.736
+Sat: True
+Models: 1+
+Calls: 1
+Time: 0.401
+Solve Time: 0.0
+1st Model Time: 0.0
+Unsat Time: 0.0
+CPU Time: 0.401
+Result: True
+Max Memory: 62.316
+
+  Problem  States  Actions  Pre-processing time   Sat Models  Calls   Time  Solve Time  1st Model Time  Unsat Time  CPU Time Result  Max Memory
+0     p07    1530       16                2.736  True     1+      1  0.401         0.0             0.0         0.0     0.401   True      62.316
 ```
+
+Observe this takes significantly less than when the full FOND+ solver has been used as per above.
 
 ### Pure Strong-cyclic under state-fair semantics
 

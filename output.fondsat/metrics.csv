@@ -1,2 +1,0 @@
-Problem,States,Actions,Pre-processing time,Sat,Models,Calls,Time,Solve Time,1st Model Time,Unsat Time,CPU Time,Result,Max Memory
-p07,1530,16,2.78,True,1,1,17.079,0.07,0.06,0.02,17.075,True,628.512

@@ -9,4 +9,4 @@ __pycache__
 Pipfile.lock
 out/
 *.pyc
-output
+output*

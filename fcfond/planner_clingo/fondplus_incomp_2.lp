@@ -53,7 +53,8 @@ terminating(S) :- fair(S), edge(S, T), terminating(T).
 %terminating(S) :- edge(S, U), S != U, apply_A(S,_), terminating(T): edge(S, T), T != S.
 
 % Involves both commented above in one rule:
-terminating(S) :- edge(S, U), S != U, terminating(T): edge(S, T), T != S; apply_A(S, _) : edge(S, S).
+suc_diff(S) :- edge(S, U), S != U.
+terminating(S) :- suc_diff(S), terminating(T): edge(S, T), T != S; apply_A(S, _) : edge(S, S).
 
 % all states should terminate from goal
 :-  not terminating(S), reach(S).

@@ -149,6 +149,7 @@ class GroundAction:
         if self.__effect == None:
             self.__effect = self.action.effect.ground(problem)
         if problem.store_value_changes() and self.__atoms == None:
+            # store the atoms that change
             pos, neg = AtomDict(), AtomDict()
             for effect in self.__effect.get_effects(problem, state):
                 pos = pos.join(effect[0].difference(effect[1]))

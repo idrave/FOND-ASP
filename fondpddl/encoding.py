@@ -29,6 +29,20 @@ def root_1(node):
 def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
                             expand_goal=True, ids=True, track=False,
                             logdict=None, atoms=False):
+    """Encode a full planning problem into an ASP Clingo program
+
+    Args:
+        problem (fondpddl.problem.Problem): [description]
+        iterator (fondpddl.algorithm.GraphIterator): algorithm to traverse the TS of the PDDL
+        expand_goal (bool, optional): a goal state should also be expanded. Defaults to True.
+        ids (bool, optional): [description]. Defaults to True.
+        track (bool, optional): print the number of states processed so far. Defaults to False.
+        logdict (dict, optional): dictionary with log results. Defaults to None.
+        atoms (bool, optional): [description]. Defaults to False.
+
+    Yields:
+        [type]: [description]
+    """
     state_index = Index()
     action_index = Index()
     problem.set_store_value_changes(atoms)
@@ -50,15 +64,16 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
             yield symbol
         if ids:
             yield action.id_clingo(action_index)
-    
+
     if logdict != None:
         logdict[STATE_N] = len(state_index)
         logdict[ACTION_N] = len(action_index)
 
     if fondpddl.logger != None:
-        fondpddl.logger.debug('States:')
+        fondpddl.logger.debug("#"*20 + " STATES " + "#"*20)
         for i, elem in enumerate(state_index):
             fondpddl.logger.debug(f'State {i}: %s' % elem.string(problem))
+        fondpddl.logger.debug("#"*20 + "ACTIONS " + "#"*20)
         for i, elem in enumerate(action_index):
             fondpddl.logger.debug(f'Action {i}: %s' % str(elem))
     return

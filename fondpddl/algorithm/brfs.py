@@ -18,11 +18,13 @@ class BreadthFirstSearch(GraphIterator):
             state.set_goal(problem.is_goal(state))
             successors = []
             #print('ITER:', state.string(problem))
+            
+            # if state is a goal and we are not expanding goals, yield the state and skip its expansion
             if not expand_goal and state.is_goal:
                 state.set_expanded()
                 state.set_transitions(successors)
                 yield state
-                continue
+                continue    # skip expansion
             #atoms = state.atoms.copy()
             for action in problem.valid_actions(state):
                 children = []

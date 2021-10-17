@@ -5,9 +5,11 @@ from fcfond.experiments import run_experiments, list_experiments
 from fcfond.run import run_pddl, run_clingo
 import fcfond.planner
 from pathlib import Path
-import logging
 import re
 import sys
+import os
+
+import logging # https://docs.python.org/3/howto/logging.html#logging-basic-tutorial
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -91,7 +93,8 @@ def main():
     logging.basicConfig(level=logging.DEBUG if args.log else logging.INFO,
                         handlers=[logging.StreamHandler(sys.stdout)],
                         format='%(message)s')
-    fondpddl.logger.addHandler(logging.FileHandler(outpath/'stdout-encode.txt','w'))
+    # set the logger of package fondpddl - https://docs.python.org/3/howto/logging.html#handlers
+    fondpddl.logger.addHandler(logging.FileHandler(os.path.join(outpath, 'stdout-encode.txt'),'w'))
 
     planner = args.planner
     if args.pddl != None:

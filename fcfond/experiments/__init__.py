@@ -112,7 +112,7 @@ def run_experiments(names, timeout, memout, output=None, n=1, planner=None,
             print(f"{col}: {df.iloc[0][col]}") # TODO does not work well for multiple experiments
         print()
         print(df)
-    with open(str(out_path/'stdout-asp.txt'), 'w') as fp:
+    with open(os.path.join(out_path, 'stdout-asp.txt'), 'w') as fp:
         fp.write(stdout)
 
 def run_experiment(name, experiments, output, timelimit,
@@ -145,7 +145,7 @@ def run_experiment(name, experiments, output, timelimit,
                     experiment[PROB_NAME], experiment[PDDL_DOMAIN],
                     experiment[PDDL_PROBLEM], planner, output,
                     experiment[GRAPH_ITER](), timelimit, memlimit, expand_goal=expgoal or experiment[EXPGOAL],
-                    k=k, n=n, threads=threads, atoms=atoms, track=track)
+                    k=k, n=n, threads=threads, store_effect_changes=atoms, track=track)
     
     return [results]
 

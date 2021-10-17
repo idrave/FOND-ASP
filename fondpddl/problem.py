@@ -17,14 +17,14 @@ PROBLEM_FAIR = 'fairness'
 
 class Problem:
     def __init__(self, name: str, domain: Domain, objects: List[Constant],
-                 init: List[Init], goal: Precondition, constraints, atoms=False):
+                 init: List[Init], goal: Precondition, constraints, store_effect_changes=False):
         self.name = name
         self.domain = domain
         self.objects = objects
         self.init = init
         self.goal = goal
         self.set_fairness(constraints)
-        self.__store_val_changes = atoms
+        self.__store_val_changes = store_effect_changes    # True if atoms that change should be stored in actions
 
         self.var_index = {pred.get_id(): Index() for pred in self.domain.predicates}
         if domain.is_typed():

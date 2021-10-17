@@ -24,13 +24,13 @@ def process_output(output, profile):
     return parsed_out
 
 def solve_pddl(name, domain_file, problem_file, planner,
-                output_dir, iterator, timelimit, memlimit, expand_goal=False, track=True, atoms=False, **kwargs):
+                output_dir, iterator, timelimit, memlimit, expand_goal=False, track=True, store_effect_changes=False, **kwargs):
     start = time.process_time()
     logs = {PROBLEM: name}
     symbols = encode_clingo_problem(
                         domain_file, problem_file, iterator=iterator,
-                        expand_goal=expand_goal, logdict=logs, track=track, atoms=atoms)
-    processed = str(Path(output_dir)/('proc_' + name + '.lp'))
+                        expand_goal=expand_goal, logdict=logs, track=track, store_effect_changes=store_effect_changes)
+    processed = os.path.join(Path(output_dir), f'proc_{name}.lp')
     process = psutil.Process(os.getpid())
     with open(processed, 'w') as fp:
         for i, symbol in enumerate(symbols):
@@ -63,7 +63,7 @@ def run_pddl(pddl_files, timeout, memout, output=None, track=True, stats=True, n
     for domain, problem in pddl_files:
         res = solve_pddl(Path(problem).stem, domain, problem, planner, str(out_path),
                          BreadthFirstSearch(), timeout, memout, track=track,
-                         n=n, expand_goal=expgoal, k=k, threads=threads, atoms=atoms)
+                         n=n, expand_goal=expgoal, k=k, threads=threads, store_effect_changes=atoms)
         format_results(res)
         results.append(res)
 
@@ -81,7 +81,7 @@ def run_pddl(pddl_files, timeout, memout, output=None, track=True, stats=True, n
             print(f"{col}: {df.iloc[0][col]}")
         print()
         print(df)
-    with open(str(out_path/'stdout-asp.txt'), 'w') as fp:
+    with open(os.path.join(out_path, 'stdout-asp.txt'), 'w') as fp:
         fp.write(stdout)
 
 def solve_clingo(name, domain_file, planner, output_dir,
@@ -118,7 +118,7 @@ def run_clingo(clingo_files, timeout, memout, output, stats=True, n=1, planner=N
             print(f"{col}: {df.iloc[0][col]}")
         print()
         print(df)
-    with open(str(out_path/'stdout-asp.txt'), 'w') as fp:
+    with open(os.path.join(out_path, 'stdout-asp.txt'), 'w') as fp:
         fp.write(stdout)
 
 def format_results(results):

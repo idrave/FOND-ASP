@@ -30,15 +30,30 @@ edge(S1, S2) :- transition(S1, Action, S2), policy(S1, Action).
 apply_A(S,J) :- policy(S,A), con_A(A,J).
 apply_B(S,J) :- policy(S,A), con_B(A,J).
 
+% changes/3: the policy applies an action in S changing the value of variable K to true/false
+atom(K) :- val(K,_).
+changes(K,S,1) :- policy(S,A), val(K,S),     eff(K,A,0).
+changes(K,S,0) :- policy(S,A), not val(K,S), eff(K,A,1).
+
+% terminating_var/1: variable K can only change its value a finite number of times
+terminating_var(K) :- X=0..1, atom(K), terminating(S) : changes(K,S,X).
+
 % fairc/1: B_j is empty or all states applying an action in B_j are terminating, thus appearances of 
 % actions in A_j are fair.
 fairc(J) :- con_A(_,J), {con_B(A,J)}=0.
-fairc(J) :- con_B(_,J), terminating(S) : apply_B(S,J). 
+fairc(J) :- con_B(_,J), terminating(S) : apply_B(S,J).
+
+% fairc/3: all states with value X (true or false) of variable K where an action in B_j is applied
+% can only be traversed finitely often
+fairc(J,K,1) :- atom(K), con_B(_,J), terminating(S) : apply_B(S,J),     val(K,S). 
+fairc(J,K,0) :- atom(K), con_B(_,J), terminating(S) : apply_B(S,J), not val(K,S).
 
 % fair/1: uses above symbols to express that the policy applies action from A_j in state s,
 % and there is a terminating state in all paths from s to itself passing through
 % a state that applies an action in B_j
 fair(S) :- apply_A(S, J), fairc(J).
+fair(S) :- apply_A(S,J), terminating_var(K),     val(K,S), fairc(J,K,1).
+fair(S) :- apply_A(S,J), terminating_var(K), not val(K,S), fairc(J,K,0).
 
 % def 15: rule 1
 terminating(G) :- goal(G).
@@ -47,13 +62,11 @@ terminating(G) :- goal(G).
 terminating(S) :- fair(S), edge(S, T), terminating(T).
 
 % def 15: rule 3
-%terminating(S) :- edge(S, _), terminating(T): edge(S, T).
-
-% additional rule for self-loops
-%terminating(S) :- edge(S, U), S != U, apply_A(S,_), terminating(T): edge(S, T), T != S.
-
-% Involves both commented above in one rule:
-terminating(S) :- edge(S, U), S != U, terminating(T): edge(S, T), T != S; apply_A(S, _) : edge(S, S).
+terminating(S) :- edge(S, _), terminating(T): edge(S, T).
 
 % all states should terminate from goal
 :-  not terminating(S), reach(S).
+
+#show policy/2.
+#show fairc/1.
+#show fairc/3.

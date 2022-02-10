@@ -26,13 +26,13 @@ The FOND-ASP is written in Answer Set Programming (ASP) using [ASP Clingo system
 
 To run the system, you will need to have Clingo installed. In [Potassco](https://potassco.org/clingo/) webpage you can find information about how to set it up. The recommended installation is through a Conda environment running:
 
-```bash
+```shell
 $ conda install -c potassco clingo
 ```
 
 Independently of the setup method used, you should be able to run from command line:
 
-```bash
+```shell
 $ clingo -h
 ```
 
@@ -84,7 +84,7 @@ First install Clingo, by compiling and installing it via `CMAKE` as per instruct
 
 Next, install `FOND-ASP` and setup a Python environment:
 
-```bash
+```shell
 $ git clone git@github.com:idrave/FOND-ASP.git
 $ pipenv shell  // create a new environment
 (fond-asp) $
@@ -94,7 +94,7 @@ Pipenv would have created a new environment, here named "`fond-asp`".
 
 Next, install in the environment the dependencies stored in `Pipfile`:
 
-```bash
+```shell
 $ pipenv install
 ```
 
@@ -104,7 +104,7 @@ After this, all the dependencies would have been downloaded and stored them unde
 
 There is one more thing that needs to be installed: the Python Clingo component into the recently created Pipenv environment. When Clingo was installed, its  Python component where installed under the users' path `~/.local/lib/python3.8/site-packages/`. This include a `clingo.cpython-38-x86_64-linux-gnu.so` file and `clingo/` folder; copy them both to your Pipenv environment:
 
-```bash
+```shell
 $ cp -a ~/.local/lib/python3.8/site-packages/clingo  ~/.local/share/virtualenvs/fond-asp.git-HxHD4kSc/lib/python3.8/site-packages/
 ```
 
@@ -192,7 +192,7 @@ Where `id/2` symbols are generating automatically by the PDDL parser to describe
 
 Once installed as an editable module, we can execute the planner by using `-m fcfond.main` from anywhere:
 
-```bash
+```shell
 $ python -m fcfond.main -h
 ```
 
@@ -378,13 +378,13 @@ The results will be left in folder `clear/`.
 **NOTE:** Since when given a PDDL encoding, the FOND-ASP system will translate it to an ASP encoding, one could use that encoding later on; for example:
 
 ```shell
-python -m fcfond.main -clingo output/proc_p01.lp
+$ python -m fcfond.main -clingo output/proc_p01.lp
 ```
 
 Finally, at the extreme, one can directly use the Clingo solver to run a particular planner directly on a particular ASP encoding of a problem:
 
 ```shell
-clingo PLANNER DOMAIN
+$ clingo PLANNER DOMAIN
 ```
 
 In this case, no planner and no specific encoding provided in this repo will be used. For example:
@@ -411,8 +411,8 @@ CPU Time     : 0.007s
 
 To run the built-in set of experiments using the `FOND-ASP` planner for FOND+ dual problems use:
 
-```bash
-python -m fcfond.main EXPERIMENTS -out OUTPUT
+```shell
+$ python -m fcfond.main EXPERIMENTS -out OUTPUT
 ```
 
 Where `EXPERIMENTS` is one or more available experiments for the planner. Some available experiments and sub-experiments (which can also be run independently) are:
@@ -443,7 +443,7 @@ Where `EXPERIMENTS` is one or more available experiments for the planner. Some a
 
 To get a list of more available experiments type
 
-```bash
+```shell
 $ python -m fcfond.main -list [LIST]
 ```
 
@@ -458,7 +458,7 @@ The results will be left under folder `OUTPUT` and will include:
 Here is an example running the QNP problems:
 
 ```shell
-$ python -m fcfond.main qnp     
+$ python -m fcfond.main qnp
 qnp
 ['clear_qnp', 'on_qnp', 'gripper_qnp', 'delivery_qnp']
 clear_qnp

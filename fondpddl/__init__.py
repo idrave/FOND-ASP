@@ -47,7 +47,7 @@ def encode_clingo_problem(domain_file, problem_file, iterator=fondpddl.algorithm
     logger.debug(f"{LOG_SEPARATOR} PROBLEM {LOG_SEPARATOR}")
     logger.debug(str(problem))
     symbols = fondpddl.encoding.clingo_problem_encoding(
-                problem, iterator, expand_goal=expand_goal, track=track, logdict=logdict, atoms=store_effect_changes)
+                problem, iterator, expand_goal=expand_goal, track=track, logdict=logdict, store_effect_changes=store_effect_changes)
     return symbols
 
 def get_labeled_graph(domain_file, problem_file, iterator=None,

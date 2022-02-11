@@ -28,7 +28,7 @@ def root_1(node):
 
 def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
                             expand_goal=True, ids=True, track=False,
-                            logdict=None, atoms=False):
+                            logdict=None, store_effect_changes=False):
     """Encode a full planning problem into an ASP Clingo program
 
     Args:
@@ -38,14 +38,14 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
         ids (bool, optional): [description]. Defaults to True.
         track (bool, optional): print the number of states processed so far. Defaults to False.
         logdict (dict, optional): dictionary with log results. Defaults to None.
-        atoms (bool, optional): [description]. Defaults to False.
+        store_effect_changes (bool, optional): store the effect effective changes. Defaults to False.
 
     Yields:
         [type]: [description]
     """
     state_index = Index()
     action_index = Index()
-    problem.set_store_value_changes(atoms)
+    problem.set_store_value_changes(store_effect_changes)
     for state in iterator.iterate(problem, expand_goal=expand_goal):
         state_index.get_index(state)
         if track:
@@ -54,13 +54,13 @@ def clingo_problem_encoding(problem: Problem, iterator: GraphIterator,
             action_index.get_index(action)
             for child in children:
                 state_index.get_index(child)
-        for symbol in state.encode_clingo(state_index, action_index, atoms=atoms):
+        for symbol in state.encode_clingo(state_index, action_index, atoms=store_effect_changes):
             yield symbol
         if ids:
             yield state.id_clingo(state_index, problem)
 
     for action in action_index:
-        for symbol in action.encode_clingo(problem, action_index, atoms=atoms):
+        for symbol in action.encode_clingo(problem, action_index, atoms=store_effect_changes):
             yield symbol
         if ids:
             yield action.id_clingo(action_index)

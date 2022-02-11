@@ -170,15 +170,68 @@ To specify fairness constraints where `B` is empty, the `:b` section is fully om
 
 It is also possible to specify a FOND+ problem directly in ASP format, by means of a set of facts using the following distinguished atoms:
 
-* `state(S)`: `S` is a state
+* `state(S)`: `S` is a state (where `S` is just an id, e.g., an integer or atom)
 * `initialState(S)`: `S` is the initial state
 * `goal(S)`: `S` is a goal state
 * `action(A)`: `A` is an action
 * `transition(S1, A, S2)`: there is a transition from state `S1` to state `S2` applying action `A`
 * `con_A(A, I)`: action `A` belongs to set of constraints `A_I`
 * `con_B(A, I)`: action `A` belongs to set of constraints `B_I`
+* `id(state(N), S)`: `N` is the description name (atom/integer/string) of state with id `S` (atom/term/integer).
+* `id(action(N), A)`: `N` is the description name (atom/integer/string) of action with id `A` (atom/term/integer).
 
-Inf act, when the system receives (extended) PDDL files, the problem is first translated to an ASP encoding using the above atoms.
+In fact, when the system receives (extended) PDDL files, the problem is first translated to an ASP encoding using the above atoms. The `id/2` predicate is used to describe the states and actions assigned to each identifier (genearlly an integer). If no name is associated to an id, then the id is used as name.
+
+For example, here is a ``linear`` problem with four states and one two non-deterministic actions, with just `c` being fair and usable to achieve the goal:
+
+```
+% A linear problem with 2 non-deterministic actions
+%
+% (1) --a--> 2 --b--> 3 --c/d--> [4]
+%            ^        |
+%            |       c/d
+%            |        |
+%             --------
+%
+%  Plan should be
+%       plan(1,a) plan(2,b) plan(3,d)
+%
+%  in the last step, only d is good
+%       action c cannot be used as it is not guaranteed to be fair in the precense of b
+
+state(1;2;3;4).
+action(a;b;c;d).
+
+transition(1,a,2).
+transition(2,b,3).
+transition(3,c,4).
+transition(3,c,2).
+transition(3,d,4).
+transition(3,d,2).
+
+initialState(1).
+goal(4).
+
+id(action(a), a).
+id(action(b), b).
+id(action(c), c).
+id(action(d), d).
+
+id(state(1), 1).
+id(state(2), 2).
+id(state(3), 3).
+id(state(4), 4).
+
+% c is fair without B
+con_A(c, 1).
+con_B(b, 1).
+
+% d is always fair
+con_A(d, 2).
+```
+
+ 
+
 
 The **output of a solver** should be atoms `policy(S, A)` specifying the action `A` to be applied in state `S`. In our sample experiments, the states and actions are represented as integers. To make the output more human readable, one can include the following rule in our program:
 
@@ -186,7 +239,6 @@ The **output of a solver** should be atoms `policy(S, A)` specifying the action 
 #show policy(State, Action): policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).
 ```
 
-Where `id/2` symbols are generating automatically by the PDDL parser to describe the states and actions assigned to each integer ID.
 
 ## Running FOND-ASP
 
@@ -207,30 +259,30 @@ where `DOMAIN` and `PROBLEM` are the PDDL files encoding the planning domain and
 For example, to solve the 7th problem of the Doors benchmark using the default FOND+ solver implemented in `fcfond/planner_clingo/fondplus_show_pretty.lp`, show the statistics (`-stats`), and leave the result files under folder `output.fondasp/`:
 
 ```shell
-$ python -m fcfond.main -stats -out output.fondasp -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p07.pddl 
+$ python -m fcfond.main -stats -out output.doors -pddl domains/pddl/fond-sat/doors/domain.pddl domains/pddl/fond-sat/doors/p07.pddl
 
-Namespace(atoms=False, clingo=None, experiments=[], expgoal=False, k=None, list=None, log=False, memout=8000000000.0, n=1, notrack=False, out=None, pddl=['fcfond/domains/pddl/fond-sat/doors/domain.pddl', 'fcfond/domains/pddl/fond-sat/doors/p07.pddl'], planner=None, stats=True, t=1, timeout=1800.0)
+Namespace(atoms=False, clingo=None, experiments=[], expgoal=False, k=None, list=None, log=False, memout=8000000000.0, n=1, notrack=False, out='output.doors', pddl=['domains/pddl/fond-sat/doors/domain.pddl', 'domains/pddl/fond-sat/doors/p07.pddl'], planner=None, stats=True, t=1, timeout=1800.0)
 Pddl processed. Start ASP solver.
-Command ['clingo', PosixPath('/mnt/ssardina-research/planning/FOND-ASP.git/fcfond/planner_clingo/fondplus_show_pretty.lp'), 'output/proc_p07.lp', '-n', '1', '-t', '1', '--single-shot']
+Command ['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/fondplus_show_pretty.lp'), 'output.doors/proc_p07.lp', '-n', '1', '-t', '1', '--single-shot']
 ASP Solved. Processing output
 Output processed.
 Problem: p07
 States: 1530
 Actions: 16
-Pre-processing time: 2.699
+Pre-processing time: 2.479
 Sat: True
 Models: 1
 Calls: 1
-Time: 17.26
+Time: 14.368
 Solve Time: 0.07
-1st Model Time: 0.06
+1st Model Time: 0.05
 Unsat Time: 0.02
-CPU Time: 17.258
+CPU Time: 13.674
 Result: True
-Max Memory: 628.396
+Max Memory: 628.512
 
-  Problem  States  Actions  Pre-processing time   Sat Models  Calls   Time  Solve Time  1st Model Time  Unsat Time  CPU Time Result  Max Memory
-0     p07    1530       16                2.699  True      1      1  17.26        0.07            0.06        0.02    17.258   True     628.396
+  Problem  States  Actions  Pre-processing time   Sat Models  Calls    Time  Solve Time  1st Model Time  Unsat Time  CPU Time Result  Max Memory
+0     p07    1530       16                2.479  True      1      1  14.368        0.07            0.05        0.02    13.674   True     628.512
 ```
 
 In this example, the solution will amount to a strong plan because no conditional fairness pairs have been specified. See below to use a specialized version that will solve it much faster.
@@ -275,7 +327,7 @@ The following are alternative FOND+ planners that just print the resulting polic
 
 Finally, planner solver `fcfond/planner_clingo/fondp_index.lp` is a **bounded version** of the FOND+ solver that uses a bound `k` on the grounding of the program to limit the recursive procedure searching for terminating states. Such bound can be specified using command line option `-k N`, where `N` is a positive integer. Note that this planner may not find a valid policy if the bound is too low for the problem being solved.
 
-Specialized planners are provided to solve FOND problems under the two standard semantics: strong plans under adversarial semantics and strong-cyclic plans under state-action fairness, as well as dual-FOND (mixing adversarial and fair actions). The benchmark from the FOND-SAT planning system are included in this repo under [fcfond/domains/pddl/fond-sat/](fcfond/domains/pddl/fond-sat).
+Specialized planners are provided to solve FOND problems under the two standard semantics: strong plans under adversarial semantics and strong-cyclic plans under state-action fairness, as well as dual-FOND (mixing adversarial and fair actions). The benchmark from the FOND-SAT planning system are included in this repo under [domains/pddl/fond-sat/](domains/pddl/fond-sat).
 
 ### Pure Strong under adversarial semantics
 
@@ -296,29 +348,29 @@ $ python -m fcfond.main --planner fcfond/planner_clingo/specialized/planner_stro
 For example, if we re-run the above problem 7 of Doors with this specialized solver:
 
 ```shell
-$ python -m fcfond.main --strong -stats -out output.fondsat/ -pddl fcfond/domains/pddl/fond-sat/doors/domain.pddl fcfond/domains/pddl/fond-sat/doors/p07.pddl     
-Namespace(atoms=False, clingo=None, experiments=[], expgoal=False, k=None, list=None, log=False, memout=8000000000.0, n=1, notrack=False, out='output.fondsat/', pddl=['fcfond/domains/pddl/fond-sat/doors/domain.pddl', 'fcfond/domains/pddl/fond-sat/doors/p07.pddl'], planner=PosixPath('/mnt/ssardina-research/planning/FOND-ASP.git/fcfond/planner_clingo/specialized/planner_strong.lp'), stats=True, t=1, timeout=1800.0)
+$ python -m fcfond.main --strong -stats -out output.doors -pddl domains/pddl/fond-sat/doors/domain.pddl domains/pddl/fond-sat/doors/p07.pddl
+Namespace(atoms=False, clingo=None, experiments=[], expgoal=False, k=None, list=None, log=False, memout=8000000000.0, n=1, notrack=False, out='output.doors', pddl=['domains/pddl/fond-sat/doors/domain.pddl', 'domains/pddl/fond-sat/doors/p07.pddl'], planner=PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/specialized/planner_strong.lp'), stats=True, t=1, timeout=1800.0)
 Pddl processed. Start ASP solver.
-Command ['clingo', PosixPath('/mnt/ssardina-research/planning/FOND-ASP.git/fcfond/planner_clingo/specialized/planner_strong.lp'), 'output.fondsat/proc_p07.lp', '-n', '1', '-t', '1', '--single-shot']
+Command ['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/specialized/planner_strong.lp'), 'output.doors/proc_p07.lp', '-n', '1', '-t', '1', '--single-shot']
 ASP Solved. Processing output
 Output processed.
 Problem: p07
 States: 1530
 Actions: 16
-Pre-processing time: 2.736
+Pre-processing time: 2.311
 Sat: True
 Models: 1+
 Calls: 1
-Time: 0.401
+Time: 0.375
 Solve Time: 0.0
 1st Model Time: 0.0
 Unsat Time: 0.0
-CPU Time: 0.401
+CPU Time: 0.366
 Result: True
-Max Memory: 62.316
+Max Memory: 62.188
 
   Problem  States  Actions  Pre-processing time   Sat Models  Calls   Time  Solve Time  1st Model Time  Unsat Time  CPU Time Result  Max Memory
-0     p07    1530       16                2.736  True     1+      1  0.401         0.0             0.0         0.0     0.401   True      62.316
+0     p07    1530       16                2.311  True     1+      1  0.375         0.0             0.0         0.0     0.366   True      62.188
 ```
 
 Observe this takes significantly less than when the full FOND+ solver has been used as per above.
@@ -346,7 +398,29 @@ $ python -m fcfond.main --planner fcfond/planner_clingo/specialized/planner_stro
 For example:
 
 ```shell
-$ python -m fcfond.main --strongcyclic -pddl fcfond/domains/pddl/fond-sat/beam-walk/domain.pddl fcfond/domains/pddl/fond-sat/beam-walk/p01.pddl
+$ python -m fcfond.main --strongcyclic -stats -pddl domains/pddl/fond-sat/beam-walk/domain.pddl domains/pddl/fond-sat/beam-walk/p01.pddl
+
+Pddl processed. Start ASP solver.
+Command ['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/specialized/planner_strongcyclic.lp'), 'output/proc_p01.lp', '-n', '1', '-t', '1', '--single-shot']
+ASP Solved. Processing output
+Output processed.
+Problem: p01
+States: 8
+Actions: 7
+Pre-processing time: 0.007
+Sat: True
+Models: 1+
+Calls: 1
+Time: 0.002
+Solve Time: 0.0
+1st Model Time: 0.0
+Unsat Time: 0.0
+CPU Time: 0.002
+Result: True
+Max Memory: 38.232
+
+  Problem  States  Actions  Pre-processing time   Sat Models  Calls   Time  Solve Time  1st Model Time  Unsat Time  CPU Time Result  Max Memory
+0     p01       8        7                0.007  True     1+      1  0.002         0.0             0.0         0.0     0.002   True      38.232
 ```
 
 As with strong planning, when this specialization is used, no `(:fairness )` statements are required, as the semantics is already fixed in the planner used (as adversarial semantics).
@@ -368,8 +442,8 @@ While the above examples make use of PDDL specifications (as domain and problem 
 For example:
 
 ```shell
-$ python -m fcfond.main -clingo fcfond/domains/clingo/clear.lp -out clear
-['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/fondplus.lp'), 'fcfond/domains/clingo/clear.lp', '-n', '1', '-t', '1']
+$ python -m fcfond.main -clingo domains/clingo/clear.lp -out output.clear
+['clingo', PosixPath('/home/ssardina/git/soft/planning/FOND/FOND-ASP.git/fcfond/planner_clingo/fondplus.lp'), 'domains/clingo/clear.lp', '-n', '1', '-t', '1']
 Status:  Finished
 ```
 
@@ -390,11 +464,11 @@ $ clingo PLANNER DOMAIN
 In this case, no planner and no specific encoding provided in this repo will be used. For example:
 
 ```shell
-$ python -m fcfond.main --strongcyclic  -pddl fcfond/domains/pddl/fond-sat/beam-walk/domain.pddl fcfond/domains/pddl/fond-sat/beam-walk/p01.pddl
+$ python -m fcfond.main --strongcyclic -out output.beamwalk -pddl domains/pddl/fond-sat/beam-walk/domain.pddl domains/pddl/fond-sat/beam-walk/p01.pddl
 
-$ clingo fcfond/planner_clingo/specialized/planner_strongcyclic.lp output/proc_p01.lp
+$ clingo fcfond/planner_clingo/specialized/planner_strongcyclic.lp output.beamwalk/proc_p01.lp
 
-clingo version 5.4.0
+clingo version 5.5.1 (47cb64b)
 Reading from ...go/specialized/planner_strongcyclic.lp ...
 Solving...
 Answer: 1
@@ -403,8 +477,8 @@ SATISFIABLE
 
 Models       : 1+
 Calls        : 1
-Time         : 0.007s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
-CPU Time     : 0.007s
+Time         : 0.003s (Solving: 0.00s 1st Model: 0.00s Unsat: 0.00s)
+CPU Time     : 0.003s
 ```
 
 ## Running the experiments

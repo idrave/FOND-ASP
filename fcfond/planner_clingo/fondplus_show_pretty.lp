@@ -1,10 +1,19 @@
 % Like fondplus.lp but shows policy in pretty format for humans
+%
+% Using Python hooks: https://potassco.org/clingo/python-api/5.5/clingo/
+% Can be done better with Clorm: https://clorm.readthedocs.io/en/latest/clorm/
 
-#program solucionar.
+#program visualize.
 #include "fondplus_core.lp".
 
 % predicate for showing
-plan(State, Action) :- policy(IdS, IdA), id(state(State), IdS), id(action(Action), IdA), reach(IdS).
+plan(State, Action) :- policy(IdS, IdA), id2(state(State), IdS), id2(action(Action), IdA), reach(IdS).
+
+% the the name description of states and actions if prescribed, otherwise take the ids
+id2(state(N), S) :- id(state(N), S).
+id2(state(S), S) :- state(S), not id(state(_), S).
+id2(action(N), A) :- id(action(N), A).
+id2(action(A), A) :- action(A), not id(action(_), A).
 
 #show plan/2.
 
@@ -13,19 +22,41 @@ plan(State, Action) :- policy(IdS, IdA), id(state(State), IdS), id(action(Action
 import re
 
 def report_model(m):
-    print("Reporting on a model.....")
-    # From string model rep extract pairs of the form (3, "DS")
-    #print(m)
-    plan = re.findall('plan\(\"([^ ]+)\",\"([^ ]+)\"\)', str(m))  # extract each (3, "DS")
+    """
+        Report model m
 
-    print('=======================================')
+        @arg m : clingo.solving.Model (https://potassco.org/clingo/python-api/5.5/clingo/solving.html#clingo.solving.Model)
+    """
+    # print("type of model: ", type(m))
+    # print("Model: ", m)
+    # print(m.symbols(shown=True))
+
+    # old way where we parsed the str rep of the model, not anymore, we use it as object!
+    #plan = re.findall('plan\(state\((.+?)\),action\((.+?)\)\)', str(m))  # extract each (3, "DS")
+
+    # extract set of rules from the plan/2 in the model returned as a clingo.solving.Model
+    plan = []
+    for f in m.symbols(shown=True): # extract function plan(State, Action)
+        state = f.arguments[0]
+        action = f.arguments[1]
+        plan.append((state, action))
+
+    print('='*50)
     print(f'Solution {m.number} - Size: {len(plan)} - Cost: {m.cost} - Optimal? {m.optimality_proven}')
-    for x in plan:
-        print(x[0], "\n\t===>", x[1])
-    print('=======================================', flush=True)
+    #print(str(m))
+    print('='*50)
+
+
+    for i, rule in enumerate(plan):
+        print(f"{i}: {rule[0]}\n\t {rule[1]}")
+    print('='*50, flush=True)
     pass
 
 def main(prg):
-    prg.ground([('base', []),('solucionar', [])])
+    # combine the base program (FOND-ASP) with  the small visualize above to show the policy found
+    # ground both
+    prg.ground([('base', []), ('visualize', [])])
+
+    # solve it and call report_model(m) when a model is found
     prg.solve(on_model=report_model)
 #end.

@@ -188,6 +188,8 @@ class GroundAction:
             pos, neg = self.__atoms
             t = clingo.Number(1)
             f = clingo.Number(0)
+
+            # generate eff/3 facts - eff(K, A, 0/1) : action A makes predicate K false/true
             for p, v in pos.iter_ids():
                 p_s, v_s = clingo.Number(p), clingo.Number(v)
                 symbols.append(clingo.Function('eff', [clingo.Function('', [p_s, v_s]), index, t]))

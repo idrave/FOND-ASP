@@ -1,3 +1,4 @@
+from collections import deque
 from re import T
 from fondpddl import ConstType, Constant, Predicate, Argument
 from fondpddl.utils import Index
@@ -43,6 +44,7 @@ class Domain:
         self.set_requirements(requirements)
         self.constants = []
         self.types = None
+        self.by_type = None
         if types != None:
             self.set_types(types)
         self.set_constants(constants)
@@ -70,32 +72,35 @@ class Domain:
     def set_constants(self, constants):
         self.constants = constants
         if self.is_typed():
-            self._create_by_type()
+            self.__create_by_type()
 
     def set_types(self, types):
-        self.types = types #TODO check requirements
-        self._create_by_type()
+        self.types = types
+        self.__create_by_type()
 
     def set_predicates(self, predicates):
         self.predicates = predicates
-        #self._validate_predicates() TODO
 
     def set_actions(self, actions):
         self.actions = actions
-        #self._validate_actions() TODO
 
-    def _create_by_type(self):
+    def __create_by_type(self):
+        """Sets self.by_type to a dictionary mapping each type (ConstType) in the domain
+        to the domain constants (list of Constant) declared either with such type or with one of its subtypes.
+        Sets self.super_type to a dictionary mapping each type in the domain to a list with all of its supertypes
+        """
         type_set = set(self.types)
-        self.by_type = {t:[] for t in type_set}
+        self.by_type = {t:[] for t in self.types}
+
         for const in self.constants:
             if const.ctype not in type_set:
                 raise ValueError(f'Type {const.ctype} of constant {const.name} not declared')
             t = const.ctype
-            while t != None:
-                self.by_type[t].append(const)
-                t = t.super_type
+            self.by_type[t].append(const)
+            for st in t.get_all_super_types():
+                self.by_type[st].append(const)
 
-    def get_constants(self, ctype:ConstType=None) -> List[Constant]: #TODO implement subtype usage
+    def get_constants(self, ctype:ConstType=None) -> List[Constant]:
         if ctype == None:
             return self.constants
         return self.by_type.get(ctype, [])
@@ -159,7 +164,7 @@ class Domain:
         pddl_iter.assert_token(':requirements')
         domain_params[DOMAIN_REQ] = Requirements.parse_requirements(pddl_iter)
         if domain_params[DOMAIN_REQ].has_typing():
-            domain_params[DOMAIN_TYP] = [ConstType('object')]
+            domain_params[DOMAIN_TYP] = []
         else:
             domain_params[DOMAIN_TYP] = None
 
@@ -167,40 +172,30 @@ class Domain:
     def parse_types(pddl_tree: PddlTree, domain_params):
         pddl_iter = pddl_tree.iter_elements()
         pddl_iter.assert_token(':types')
-        if not domain_params[DOMAIN_REQ].has_typing():
-            raise ValueError(':typing requirement missing using types')
+        # if not domain_params[DOMAIN_REQ].has_typing():
+        #     raise ValueError(':typing requirement missing using types')
         if domain_params[IS_TYPE_SET]:
             raise ValueError('Redefinition of types')
         typed_list = parse_typed_list(pddl_iter)
-        types = {"object": None}
+        types = {"object": []}
         for type_l, super_type_name in typed_list:
             for name in type_l:
-                if name in types:
-                    raise ValueError(f'Duplicate type {name}')
-                types[name] = super_type_name
-                
-        typeobjs = {t.name : t for t in domain_params[DOMAIN_TYP]}
-        def get_type_obj(t):
-            if t in typeobjs: 
-                ans = typeobjs[t]
-                if ans == None:
-                    raise ValueError("Cyclic dependency in types")
-                return ans
-            typeobjs[t] = None
-            st_name = types[t]
-            supertype = None
-            if st_name == None:
-                supertype = typeobjs["object"]
-            else:
-                supertype = get_type_obj(st_name)
-            typeobjs[t] = ConstType(t, supertype)
-            return typeobjs[t]
+                if name not in types:
+                    types[name] = []
+                types[name].append(super_type_name)
 
-        for t, st in types.items():
-            if st != None and st not in types:
-                raise ValueError(f'Undefined type {st}')
-        for t in types.keys():
-            domain_params[DOMAIN_TYP].append(get_type_obj(t))
+        for _, super_type_name in typed_list:
+            if super_type_name not in types:
+                types[super_type_name] = ["object"]
+            
+        typeobjs = {}
+        for name in types:
+            typeobjs[name] = ConstType(name, [])
+        for name, super_list in types.items():
+            for st in super_list:
+                typeobjs[name].super_types.append(typeobjs[st])
+
+        domain_params[DOMAIN_TYP] = typeobjs.values()
         domain_params[IS_TYPE_SET] = True
 
     @staticmethod

@@ -20,21 +20,27 @@ class Problem:
                  init: List[Init], goal: Precondition, constraints, store_effect_changes=False):
         self.name = name
         self.domain = domain
-        self.objects = objects
+        self.objects = []
+        self.by_type = domain.by_type
+        for o in objects:
+            self.add_object(o)
         self.init = init
         self.goal = goal
         self.set_fairness(constraints)
         self.__store_val_changes = store_effect_changes    # True if atoms that change should be stored in actions
 
-        self.var_index = {pred.get_id(): Index() for pred in self.domain.predicates}
-        if domain.is_typed():
-            self.by_type = domain.by_type
-            for const in self.objects:
-                if const.ctype not in self.by_type:
-                    raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
-                self.by_type[const.ctype].append(const)
-        
+        self.var_index = {pred.get_id(): Index() for pred in self.domain.predicates}       
         self.__prob_actions = [ProblemAction(action, self) for action in self.domain.actions]
+
+    def add_object(self, const):
+        self.objects.append(const)
+        if not self.domain.is_typed():
+            return
+        if const.ctype not in self.by_type:
+            raise ValueError(f'Type {const.ctype} of constant {const.name} not declared') 
+        self.by_type[const.ctype].append(const)
+        for st in const.ctype.get_all_super_types():
+            self.by_type[st].append(const)
 
     def set_fairness(self, constraints: List[Tuple[List[GroundAction], List[GroundAction]]]):
         self.constraints = constraints

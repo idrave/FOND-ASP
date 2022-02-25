@@ -14,8 +14,9 @@ def get_subprocess_memory():
     cinfo = resource.getrusage(resource.RUSAGE_CHILDREN)
     return cinfo.ru_maxrss
 
-def limit_process_memory(bytes):
-    resource.setrlimit(resource.RLIMIT_AS, (bytes, bytes))
+def limit_process_memory(nbytes):
+    nbytes = int(nbytes)
+    resource.setrlimit(resource.RLIMIT_AS, (nbytes, nbytes))
 
 def is_bad_alloc(err):
     if err.find('*** ERROR: (clingo): std::bad_alloc') != -1: return True

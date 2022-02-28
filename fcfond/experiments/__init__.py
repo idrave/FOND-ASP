@@ -14,7 +14,7 @@ import fcfond.experiments.fondsat
 import fcfond.experiments.synthetic
 
 def list_experiments(name):
-    experiments = get_experiments()
+    experiments = get_known_experiments()
     if not len(name):
         print('Experiments lists:')
         print('\tqnp\n\tltl\n\tfond_sat\n\tnested\n\tsequential\n\tunfair_qnp\n\tfoot\n\tfoot_cyclic\n\tbenchmark_1')
@@ -41,7 +41,12 @@ def list_experiments(name):
         for exp in exps:
             print('\t'+exp)
 
-def get_experiments():
+def get_known_experiments():
+    """Define a collection of pre-defined experiments
+
+    Returns:
+        dict: dictionary of experiments
+    """
     experiments = {**fcfond.experiments.qnp.get_experiments(),
                    **fcfond.experiments.ltl.get_experiments(),
                    **fcfond.experiments.fondsat.get_experiments(),
@@ -52,6 +57,8 @@ def get_experiments():
     add_pddl_experiment(experiments, 'foot3x2_unfair_01', 'foot3x2_unfair_01', PDDL_DOM_PATHS/'foot3x2_d.pddl',
                         PDDL_DOM_PATHS/'foot3x2_unfair_01.pddl', DEFAULT_OUT/'foot3x2_unfair_01',
                         fcfond.planner.FONDPLUS)
+
+    # Add football experiments
     football = {}
     football_sc = {}
     for i in range(3, 22, 2):
@@ -68,18 +75,38 @@ def get_experiments():
     add_experiment_list(football_sc, 'foot_cyclic', 'foot_cyclic', list(football_sc.keys()), DEFAULT_OUT/'football'/'all_cyclic')
     experiments.update(**football)
     experiments.update(**football_sc)
+
     add_experiment_list(experiments, 'benchmark_1', 'benchmark_1',
                         ['qnp'] + \
                         list(fcfond.experiments.ltl.get_experiments().keys()) + \
                         ['foot3x2'], DEFAULT_OUT/'benchmark_1')
-    
+
     return experiments
 
-def run_experiments(names, timeout, memout, output=None, n=1, planner=None,
+def run_experiments(exp_names, timeout, memout, output=None, n=1, planner=None,
                     expgoal=False, k=None, threads=1, stats=True, atoms=False, track=False):
-    experiments = get_experiments()
+    """Run the set of experiments with names in exp_names
+
+    Args:
+        exp_names (list(str)): List of experiments to run by their names
+        timeout (int): timeout to use for experiments
+        memout (_type_): _description_
+        output (_type_, optional): _description_. Defaults to None.
+        n (int, optional): _description_. Defaults to 1.
+        planner (_type_, optional): _description_. Defaults to None.
+        expgoal (bool, optional): _description_. Defaults to False.
+        k (_type_, optional): _description_. Defaults to None.
+        threads (int, optional): _description_. Defaults to 1.
+        stats (bool, optional): _description_. Defaults to True.
+        atoms (bool, optional): _description_. Defaults to False.
+        track (bool, optional): _description_. Defaults to False.
+
+    Raises:
+        ValueError: _description_
+    """
+    experiments = get_known_experiments()
     results = []
-    for name in names:
+    for name in exp_names:
         if name in experiments:
             experiment = experiments[name]
         else:
@@ -123,6 +150,8 @@ def run_experiment(name, experiments, output, timelimit,
         experiment = experiments[name]
     else:
         raise ValueError(f'Wrong experiment name {name}')
+
+    # Collect all the experiments and call it again
     if EXPERIMENTS in experiment:
         results = []
         print(experiment[EXPERIMENTS])
@@ -133,6 +162,7 @@ def run_experiment(name, experiments, output, timelimit,
             results.append(result)
         return experiment[CALLBACK](experiment, results)
 
+    # run the actual experiment stored in var experiment
     planner = planner if planner != None else experiment[PLANNER]
     if experiment[ENCODING] == CLINGO:
         results = solve_clingo(
@@ -146,11 +176,11 @@ def run_experiment(name, experiments, output, timelimit,
                     experiment[PDDL_PROBLEM], planner, output,
                     experiment[GRAPH_ITER](), timelimit, memlimit, expand_goal=expgoal or experiment[EXPGOAL],
                     k=k, n=n, threads=threads, store_effect_changes=atoms, track=track)
-    
+
     return [results]
 
 def print_experiments(names):
-    experiments = get_experiments()
+    experiments = get_known_experiments()
     for name in names:
         if name in experiments:
             experiment = experiments[name]

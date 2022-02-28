@@ -3,11 +3,13 @@
 % Using Python hooks: https://potassco.org/clingo/python-api/5.5/clingo/
 % Can be done better with Clorm: https://clorm.readthedocs.io/en/latest/clorm/
 
-#program visualize.
+% the base proram is the FONDPLUS core system
 #include "fondplus_core.lp".
 
+% program to support visualization/pretty printing
+#program visualize.
 % predicate for showing
-plan(State, Action) :- policy(IdS, IdA), id2(state(State), IdS), id2(action(Action), IdA), reach(IdS).
+plan(S, A) :- id2(state(S), IdS), id2(action(A), IdA), policy(IdS, IdA), reachable(IdS).
 
 % the the name description of states and actions if prescribed, otherwise take the ids
 id2(state(N), S) :- id(state(N), S).
@@ -53,8 +55,8 @@ def report_model(m):
     pass
 
 def main(prg):
-    # combine the base program (FOND-ASP) with  the small visualize above to show the policy found
-    # ground both
+    # combine the base program (FOND-ASP) with
+    # the small visualize above to show the policy found ground both
     prg.ground([('base', []), ('visualize', [])])
 
     # solve it and call report_model(m) when a model is found

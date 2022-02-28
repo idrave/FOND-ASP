@@ -1,4 +1,4 @@
-% Solvable but care needs to be taken when selecting action at 3
+% A SOLVABLE instance, but care needs to be taken when selecting action at 3
 %   bc action a is not fair in the precense of action b
 %
 %   https://dot-to-ascii.ggerganov.com/?src_hash=5871e6d8

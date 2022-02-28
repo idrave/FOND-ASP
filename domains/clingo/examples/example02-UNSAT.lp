@@ -1,4 +1,4 @@
-% A UNSAT problem problem with 3 non-deterministic a1, a2, a3
+% An UNSOLVABLE problem problem with 3 non-deterministic a1, a2, a3
 %
 %   https://dot-to-ascii.ggerganov.com/?src_hash=73fe8887
 %
@@ -120,4 +120,4 @@ con_A(a2,2).
 
 % Third conditional C3: a2
 % if uncommented, then a solution will be found as loop in 3 is fair
-con_A(a3,3).
+% con_A(a3,3).

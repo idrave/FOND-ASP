@@ -15,7 +15,7 @@ The FOND-ASP is written in Answer Set Programming (ASP) using [ASP Clingo system
     - [PDDL specifications](#pddl-specifications)
     - [ASP Encoding](#asp-encoding)
   - [Running FOND-ASP](#running-fond-asp)
-  - [Panners/Solvers available](#pannerssolvers-available)
+  - [Planners/Solvers available](#plannerssolvers-available)
     - [Pure Strong under adversarial semantics](#pure-strong-under-adversarial-semantics)
     - [Pure Strong-cyclic under state-fair semantics](#pure-strong-cyclic-under-state-fair-semantics)
     - [Dual FOND: mix of adversarial and fair actions](#dual-fond-mix-of-adversarial-and-fair-actions)
@@ -309,9 +309,9 @@ There are two major aspects that can be changed in the above default use of FOND
 1. Specify a specialized planner solver via option `-planner`. There are a few of these planners available.
 2. Run the system directly on a Clingo ASP flat encoding of the planning task via option `-clingo`. This will save the pre-processing time of converting the PDDL specification into an ASP flat encoding.
 
-## Panners/Solvers available
+## Planners/Solvers available
 
-The **default** FOND+ system of the planner uses ASP planner program `fcfond/planner_clingo/fondplus_pretty.lp` and pretty prints the policy found as rules `S ==> A`. This solver takes a FOND+ problem, including conditional fairness specifications.
+The **default** FOND+ system of the planner uses ASP planner program `fcfond/planner_clingo/fondplus_pretty.lp`, which pretty prints the policy found as rules `N: S A`. This solver takes a FOND+ problem, including conditional fairness specifications.
 
 We can specify alternative planner solvers via the option `--planner PLANNER`. The deafult system is equivalent to running:
 
@@ -319,15 +319,22 @@ We can specify alternative planner solvers via the option `--planner PLANNER`. T
 $ python -m fcfond.main -planner fcfond/planner_clingo/fondplus_show_pretty.lp -pddl DOMAIN PROBLEM
 ```
 
-The following are alternative FOND+ planners that just print the resulting policy differently:
+The core program for FOND+ is located on file `fcfond/planner_clingo/fondplus_core.lp`. If called directly, all the model will be reported. A couple of wrappers on top of it are defined with different printing styles:
 
-* `fcfond/planner_clingo/fondplus.lp`: only the `policy/2` fraction of the model is reported.
-* `fcfond/planner_clingo/fondplus_noshow.lp`: silent solver, nothing is reported.
-* `fcfond/planner_clingo/fondplus_show.lp`: like `fondplus.lp` but grounding the showing part independently and after solving the main program. Seems to sometime run faster.
+* [`fcfond/planner_clingo/fondplus_noshow.lp`](fcfond/planner_clingo/fondplus_noshow.lp): silent solver, nothing is reported; just result.
+* [`fcfond/planner_clingo/fondplus_show_simple.lp`](fcfond/planner_clingo/fondplus_show_simple.lp): only the `plan/2` predicate is show, which represents `policy/2` in the core solver, but with the states and actions id translated, if available via predicate `id/2`.
+* [`fcfond/planner_clingo/fondplus_show_pretty.lp`](fcfond/planner_clingo/fondplus_show_pretty.lp): besides reporting the `plan/2` interface predicate, the policy is printed formatted for human readability. This relies on [Clingo Python-API](https://potassco.org/clingo/python-api/5.5/clingo/) to extract, process, and print models.
 
-Finally, planner solver `fcfond/planner_clingo/fondp_index.lp` is a **bounded version** of the FOND+ solver that uses a bound `k` on the grounding of the program to limit the recursive procedure searching for terminating states. Such bound can be specified using command line option `-k N`, where `N` is a positive integer. Note that this planner may not find a valid policy if the bound is too low for the problem being solved.
+**Specialized planners** are provided in [`fcfond/planner_clingo/specialized`](fcfond/planner_clingo/specialized) to solve FOND problems under the two standard semantics: strong plans under adversarial semantics and strong-cyclic plans under state-action fairness, as well as dual-FOND (mixing adversarial and fair actions). The benchmark from the FOND-SAT planning system are included in this repo under [domains/pddl/fond-sat/](domains/pddl/fond-sat). See details of these planners below.
 
-Specialized planners are provided to solve FOND problems under the two standard semantics: strong plans under adversarial semantics and strong-cyclic plans under state-action fairness, as well as dual-FOND (mixing adversarial and fair actions). The benchmark from the FOND-SAT planning system are included in this repo under [domains/pddl/fond-sat/](domains/pddl/fond-sat).
+**Incomplete planner** versions are provided in folder [`fcfond/planner_clingo/incomplete`](fcfond/planner_clingo/incomplete).
+
+Finally, two more **special planners** are available:
+
+* [`fcfond/planner_clingo/fondplus_multi.lp`](fcfond/planner_clingo/fondplus_multi.lp): a simple example how  we can solve it in **multi-shot** fashion, by solving the problem first, and then grouding the `plan/2` predicate. Seems to run faster in some cases.
+* [`fcfond/planner_clingo/fondp_index.lp`](fcfond/planner_clingo/fondp_index.lp) is a **bounded version** of the FOND+ solver that uses a bound `k` on the grounding of the program to limit the recursive procedure searching for terminating states. Such bound can be specified using command line option `-k N`, where `N` is a positive integer. Note that this planner may not find a valid policy if the bound is too low for the problem being solved.
+
+
 
 ### Pure Strong under adversarial semantics
 

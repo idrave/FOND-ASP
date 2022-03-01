@@ -11,3 +11,4 @@ out/
 *.pyc
 output*
 test.lp
+work.py

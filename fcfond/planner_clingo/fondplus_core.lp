@@ -44,23 +44,31 @@ blocked2(S1, S2) :- state(S1), state(S2), not connected(S1, S2).
 blocked2(S1, S2) :- connected(S1, S2), terminates(S1).
 blocked2(S1, S2) :- connected(S1, S2), terminates(S2).
 
-% blocked2(S1, S2) :-     % OPTION 1
-%     connected(S1, S2), not edge(S1, S2): S1 = S2 ;
-%     blocked2(T, S2) : edge(S1, T), S1 != T.
 
-blocked2(S1, S2) :-   % OPTION 2: as in the paper
-    connected(S1, S2), blocked2(T, S2) : edge(S1, T), connected(T, S2).
-
+%%%%%%%%%%%%%%
+% OPTION 1 (original code)
+%%%%%%%%%%%%%%
+blocked2(S1, S2) :-
+    connected(S1, S2), not edge(S1, S2): S1 = S2 ;
+    blocked2(T, S2) : edge(S1, T), S1 != T.
 
 % fair/1: uses above symbols to express that the policy applies action from A_i in state s,
 %   and there is a terminating state in all paths from s to itself passing through
 %   a state that applies an action in B_i
 %   Works well with OPTION 1 above for blocked2/2
-% fair(S) :- policy(S, A), con_A(A, I), blocked(S, T): policy(T, B), con_B(B, I).
+fair(S) :- policy(S, A), con_A(A, I), blocked(S, T): policy(T, B), con_B(B, I).
 
+
+%%%%%%%%%%%%%%
+% OPTION 2 (paper)
 % As in paper:;  should work together with OPTION 2 above for blocked/2
 %   Seems to yield TWO models, but model 2 is a super set of model 1?
-fair(S) :- policy(S, A), con_A(A, I), blocked2(T, S): policy(T, B), con_B(B, I), not blocked2(S, T).
+%   example3.lp but without the integrity constraint on core planner!
+%%%%%%%%%%%%%%
+% blocked2(S1, S2) :-
+%     connected(S1, S2), blocked2(T, S2) : edge(S1, T), connected(T, S2).
+% fair(S) :- policy(S, A), con_A(A, I), blocked2(T, S): policy(T, B), con_B(B, I), not blocked2(S, T).
+
 
 % Interesting this would not work!
 % fair(S) :- policy(S, A), con_A(A, I), blocked(S, T): policy(T, B), con_B(B, I).

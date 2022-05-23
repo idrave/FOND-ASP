@@ -1,7 +1,5 @@
-% This version solves the problem first, and THEN grounds plan/2 separately 
-% on top of policy/2 and id/2
+% This version solves the problem first, and THEN grounds plan/2 separately on top of policy/2 and id/2
 % It seems to run faster in some cases
-%
 
 #program solucionar.
 #include "fondplus_core.lp".

@@ -32,6 +32,8 @@
 %
 % There should be a solution because it can exit at 1 to the goal since c is always fair
 % Action a at 0 will also behave fair despite b because the loop contains an exit at 1
+%
+% $ python -m fcfond.main -clingo domains/clingo/examples/example03.lp -stats -log
 
 
 state(0..2;10).

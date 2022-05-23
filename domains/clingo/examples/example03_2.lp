@@ -33,6 +33,9 @@
 %
 % There should not be a solution because we can loop infinitely between 0 and 2,
 % and such infinite trajectory is valid given the fairness assumptions.
+% Hence the effect 0 --a--> 1 is not guaranteeed to happen and we may never get to 10
+%
+% $ python -m fcfond.main -clingo domains/clingo/examples/example03_2.lp -stats -log
 
 state(0..2;10).
 action(a;b;c).
@@ -53,5 +56,3 @@ con_B(b,1).
 
 % C2: action c is always fair!
 con_A(c,2).
-
-

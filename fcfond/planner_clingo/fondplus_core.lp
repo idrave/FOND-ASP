@@ -46,7 +46,7 @@ blocked2(S1, S2) :- connected(S1, S2), terminates(S2).
 
 
 %%%%%%%%%%%%%%
-% OPTION 1 (original code)
+% OPTION 1 (original codebase/experiments)
 %%%%%%%%%%%%%%
 blocked2(S1, S2) :-
     connected(S1, S2), not edge(S1, S2): S1 = S2 ;
@@ -60,7 +60,7 @@ fair(S) :- policy(S, A), con_A(A, I), blocked(S, T): policy(T, B), con_B(B, I).
 
 
 %%%%%%%%%%%%%%
-% OPTION 2 (paper)
+% OPTION 2 (original paper)
 % As in paper:;  should work together with OPTION 2 above for blocked/2
 %   Seems to yield TWO models, but model 2 is a super set of model 1?
 %   example3.lp but without the integrity constraint on core planner!
